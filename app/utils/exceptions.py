@@ -29,3 +29,15 @@ class FederatedSimulationError(Exception):
     """Raised when FL simulation fails."""
 
     pass
+
+
+class RepositoryError(Exception):
+    """Raised when repository operation fails."""
+
+    pass
+
+
+class EntityNotFoundError(RepositoryError):
+    """Raised when entity is not found in repository."""
+
+    pass

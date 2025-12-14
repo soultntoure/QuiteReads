@@ -27,6 +27,7 @@ dev-dependencies = [
   "scikit-surprise",
   "flwr[simulation]",
   "pytest",
+  "pytest-asyncio",
   "httpx",
   "python-multipart",
   "pytest-cov",
@@ -34,9 +35,13 @@ dev-dependencies = [
   "isort",
   "mypy",
   "ruff",
+  "asyncpg",
+  "aiosqlite",
 ]
 
 # Pytest config
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = "test_*.py"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
