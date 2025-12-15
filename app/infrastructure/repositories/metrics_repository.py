@@ -33,12 +33,11 @@ class MetricsRepository(BaseRepository[PerformanceMetric, int]):
         """
         self._session = session
 
-    async def add(self, entity: PerformanceMetric, experiment_id: str) -> PerformanceMetric:
+    async def add(self, entity: PerformanceMetric) -> PerformanceMetric:
         """Persist a new metric.
 
         Args:
-            entity: PerformanceMetric to persist.
-            experiment_id: ID of the experiment this metric belongs to.
+            entity: PerformanceMetric to persist (must include experiment_id).
 
         Returns:
             The persisted metric.
@@ -48,7 +47,7 @@ class MetricsRepository(BaseRepository[PerformanceMetric, int]):
         """
         try:
             model = MetricModel(
-                experiment_id=experiment_id,
+                experiment_id=entity.experiment_id,
                 name=entity.name,
                 value=entity.value,
                 context=entity.context,
@@ -62,13 +61,12 @@ class MetricsRepository(BaseRepository[PerformanceMetric, int]):
             raise RepositoryError(f"Failed to add metric: {e}") from e
 
     async def add_batch(
-        self, metrics: List[PerformanceMetric], experiment_id: str
+        self, metrics: List[PerformanceMetric]
     ) -> List[PerformanceMetric]:
         """Persist multiple metrics in batch.
 
         Args:
-            metrics: List of metrics to persist.
-            experiment_id: ID of the experiment.
+            metrics: List of metrics to persist (each must include experiment_id).
 
         Returns:
             List of persisted metrics.
@@ -79,7 +77,7 @@ class MetricsRepository(BaseRepository[PerformanceMetric, int]):
         try:
             models = [
                 MetricModel(
-                    experiment_id=experiment_id,
+                    experiment_id=metric.experiment_id,
                     name=metric.name,
                     value=metric.value,
                     context=metric.context,
@@ -325,6 +323,7 @@ class MetricsRepository(BaseRepository[PerformanceMetric, int]):
         return PerformanceMetric(
             name=model.name,
             value=model.value,
+            experiment_id=model.experiment_id,
             context=model.context,
             round_number=model.round_number,
             client_id=model.client_id,

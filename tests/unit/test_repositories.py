@@ -85,15 +85,14 @@ def federated_experiment(default_config: Configuration) -> FederatedExperiment:
     )
 
 
-@pytest.fixture
-def sample_metrics() -> list[PerformanceMetric]:
-    """Create sample performance metrics."""
+def sample_metrics(experiment_id: str) -> list[PerformanceMetric]:
+    """Create sample performance metrics for a given experiment."""
     return [
-        PerformanceMetric(name="rmse", value=1.0, round_number=1),
-        PerformanceMetric(name="rmse", value=0.9, round_number=2),
-        PerformanceMetric(name="rmse", value=0.8, round_number=3),
-        PerformanceMetric(name="loss", value=0.5, round_number=1),
-        PerformanceMetric(name="loss", value=0.4, round_number=2),
+        PerformanceMetric(name="rmse", value=1.0, experiment_id=experiment_id, round_number=1),
+        PerformanceMetric(name="rmse", value=0.9, experiment_id=experiment_id, round_number=2),
+        PerformanceMetric(name="rmse", value=0.8, experiment_id=experiment_id, round_number=3),
+        PerformanceMetric(name="loss", value=0.5, experiment_id=experiment_id, round_number=1),
+        PerformanceMetric(name="loss", value=0.4, experiment_id=experiment_id, round_number=2),
     ]
 
 
@@ -132,10 +131,20 @@ class TestExperimentRepositoryAdd:
     ) -> None:
         """Can add experiment with training metrics."""
         centralized_experiment.add_epoch_metric(
-            PerformanceMetric(name="rmse", value=0.95, round_number=1)
+            PerformanceMetric(
+                name="rmse",
+                value=0.95,
+                experiment_id=centralized_experiment.experiment_id,
+                round_number=1,
+            )
         )
         centralized_experiment.add_epoch_metric(
-            PerformanceMetric(name="rmse", value=0.85, round_number=2)
+            PerformanceMetric(
+                name="rmse",
+                value=0.85,
+                experiment_id=centralized_experiment.experiment_id,
+                round_number=2,
+            )
         )
 
         result = await experiment_repo.add(centralized_experiment)
@@ -203,7 +212,12 @@ class TestExperimentRepositoryGetById:
     ) -> None:
         """Retrieved experiment preserves training metrics."""
         centralized_experiment.add_epoch_metric(
-            PerformanceMetric(name="rmse", value=0.95, round_number=1)
+            PerformanceMetric(
+                name="rmse",
+                value=0.95,
+                experiment_id=centralized_experiment.experiment_id,
+                round_number=1,
+            )
         )
         await experiment_repo.add(centralized_experiment)
 
@@ -386,10 +400,22 @@ class TestExperimentRepositoryFederatedSpecific:
     ) -> None:
         """Preserves client metrics for federated experiments."""
         federated_experiment.add_client_metric(
-            "client_1", PerformanceMetric(name="loss", value=0.5, round_number=1)
+            "client_1",
+            PerformanceMetric(
+                name="loss",
+                value=0.5,
+                experiment_id=federated_experiment.experiment_id,
+                round_number=1,
+            ),
         )
         federated_experiment.add_client_metric(
-            "client_2", PerformanceMetric(name="loss", value=0.6, round_number=1)
+            "client_2",
+            PerformanceMetric(
+                name="loss",
+                value=0.6,
+                experiment_id=federated_experiment.experiment_id,
+                round_number=1,
+            ),
         )
 
         await experiment_repo.add(federated_experiment)
@@ -437,8 +463,13 @@ class TestMetricsRepositoryAdd:
         """Can add single metric."""
         await experiment_repo.add(centralized_experiment)
 
-        metric = PerformanceMetric(name="rmse", value=0.95, round_number=1)
-        result = await metrics_repo.add(metric, centralized_experiment.experiment_id)
+        metric = PerformanceMetric(
+            name="rmse",
+            value=0.95,
+            experiment_id=centralized_experiment.experiment_id,
+            round_number=1,
+        )
+        result = await metrics_repo.add(metric)
 
         assert result.name == "rmse"
         assert result.value == 0.95
@@ -452,14 +483,12 @@ class TestMetricsRepositoryAddBatch:
         experiment_repo: ExperimentRepository,
         metrics_repo: MetricsRepository,
         centralized_experiment: CentralizedExperiment,
-        sample_metrics: list[PerformanceMetric],
     ) -> None:
         """Can add batch of metrics."""
         await experiment_repo.add(centralized_experiment)
 
-        result = await metrics_repo.add_batch(
-            sample_metrics, centralized_experiment.experiment_id
-        )
+        metrics = sample_metrics(centralized_experiment.experiment_id)
+        result = await metrics_repo.add_batch(metrics)
 
         assert len(result) == 5
 
@@ -472,11 +501,11 @@ class TestMetricsRepositoryGetByExperiment:
         experiment_repo: ExperimentRepository,
         metrics_repo: MetricsRepository,
         centralized_experiment: CentralizedExperiment,
-        sample_metrics: list[PerformanceMetric],
     ) -> None:
         """Can retrieve metrics by experiment."""
         await experiment_repo.add(centralized_experiment)
-        await metrics_repo.add_batch(sample_metrics, centralized_experiment.experiment_id)
+        metrics = sample_metrics(centralized_experiment.experiment_id)
+        await metrics_repo.add_batch(metrics)
 
         result = await metrics_repo.get_by_experiment(
             centralized_experiment.experiment_id
@@ -493,11 +522,11 @@ class TestMetricsRepositoryGetByExperimentAndName:
         experiment_repo: ExperimentRepository,
         metrics_repo: MetricsRepository,
         centralized_experiment: CentralizedExperiment,
-        sample_metrics: list[PerformanceMetric],
     ) -> None:
         """Filters metrics by name."""
         await experiment_repo.add(centralized_experiment)
-        await metrics_repo.add_batch(sample_metrics, centralized_experiment.experiment_id)
+        metrics = sample_metrics(centralized_experiment.experiment_id)
+        await metrics_repo.add_batch(metrics)
 
         rmse_metrics = await metrics_repo.get_by_experiment_and_name(
             centralized_experiment.experiment_id, "rmse"
@@ -523,12 +552,20 @@ class TestMetricsRepositoryGetClientMetrics:
         await experiment_repo.add(federated_experiment)
 
         await metrics_repo.add(
-            PerformanceMetric(name="loss", value=0.5, client_id="client_1"),
-            federated_experiment.experiment_id,
+            PerformanceMetric(
+                name="loss",
+                value=0.5,
+                experiment_id=federated_experiment.experiment_id,
+                client_id="client_1",
+            )
         )
         await metrics_repo.add(
-            PerformanceMetric(name="loss", value=0.6, client_id="client_2"),
-            federated_experiment.experiment_id,
+            PerformanceMetric(
+                name="loss",
+                value=0.6,
+                experiment_id=federated_experiment.experiment_id,
+                client_id="client_2",
+            )
         )
 
         client1_metrics = await metrics_repo.get_client_metrics(
@@ -552,12 +589,20 @@ class TestMetricsRepositoryGetRoundMetrics:
         await experiment_repo.add(federated_experiment)
 
         await metrics_repo.add(
-            PerformanceMetric(name="rmse", value=0.9, round_number=1),
-            federated_experiment.experiment_id,
+            PerformanceMetric(
+                name="rmse",
+                value=0.9,
+                experiment_id=federated_experiment.experiment_id,
+                round_number=1,
+            )
         )
         await metrics_repo.add(
-            PerformanceMetric(name="rmse", value=0.8, round_number=2),
-            federated_experiment.experiment_id,
+            PerformanceMetric(
+                name="rmse",
+                value=0.8,
+                experiment_id=federated_experiment.experiment_id,
+                round_number=2,
+            )
         )
 
         round1_metrics = await metrics_repo.get_round_metrics(
@@ -581,11 +626,26 @@ class TestMetricsRepositoryGetStats:
         await experiment_repo.add(centralized_experiment)
 
         metrics = [
-            PerformanceMetric(name="rmse", value=1.0, round_number=1),
-            PerformanceMetric(name="rmse", value=0.8, round_number=2),
-            PerformanceMetric(name="rmse", value=0.6, round_number=3),
+            PerformanceMetric(
+                name="rmse",
+                value=1.0,
+                experiment_id=centralized_experiment.experiment_id,
+                round_number=1,
+            ),
+            PerformanceMetric(
+                name="rmse",
+                value=0.8,
+                experiment_id=centralized_experiment.experiment_id,
+                round_number=2,
+            ),
+            PerformanceMetric(
+                name="rmse",
+                value=0.6,
+                experiment_id=centralized_experiment.experiment_id,
+                round_number=3,
+            ),
         ]
-        await metrics_repo.add_batch(metrics, centralized_experiment.experiment_id)
+        await metrics_repo.add_batch(metrics)
 
         stats = await metrics_repo.get_metric_stats(
             centralized_experiment.experiment_id, "rmse"
@@ -605,11 +665,11 @@ class TestMetricsRepositoryDelete:
         experiment_repo: ExperimentRepository,
         metrics_repo: MetricsRepository,
         centralized_experiment: CentralizedExperiment,
-        sample_metrics: list[PerformanceMetric],
     ) -> None:
         """Can delete all metrics for an experiment."""
         await experiment_repo.add(centralized_experiment)
-        await metrics_repo.add_batch(sample_metrics, centralized_experiment.experiment_id)
+        metrics = sample_metrics(centralized_experiment.experiment_id)
+        await metrics_repo.add_batch(metrics)
 
         deleted_count = await metrics_repo.delete_by_experiment(
             centralized_experiment.experiment_id
@@ -630,6 +690,8 @@ class TestMetricsRepositoryUpdate:
         self, metrics_repo: MetricsRepository
     ) -> None:
         """Update raises NotImplementedError (metrics are immutable)."""
-        metric = PerformanceMetric(name="rmse", value=0.9)
+        metric = PerformanceMetric(
+            name="rmse", value=0.9, experiment_id="test-experiment-id"
+        )
         with pytest.raises(NotImplementedError):
             await metrics_repo.update(metric)

@@ -104,7 +104,10 @@ class TestExperimentLifecycle:
         for epoch in range(1, 6):
             exp.add_epoch_metric(
                 PerformanceMetric(
-                    name="rmse", value=1.0 - epoch * 0.1, round_number=epoch
+                    name="rmse",
+                    value=1.0 - epoch * 0.1,
+                    experiment_id=exp.experiment_id,
+                    round_number=epoch,
                 )
             )
         await experiment_repo.update(exp)
@@ -141,7 +144,10 @@ class TestExperimentLifecycle:
             # Global metric per round
             exp.add_round_metric(
                 PerformanceMetric(
-                    name="rmse", value=1.0 - round_num * 0.1, round_number=round_num
+                    name="rmse",
+                    value=1.0 - round_num * 0.1,
+                    experiment_id=exp.experiment_id,
+                    round_number=round_num,
                 )
             )
             # Client metrics per round
@@ -151,6 +157,7 @@ class TestExperimentLifecycle:
                     PerformanceMetric(
                         name="loss",
                         value=0.5 - round_num * 0.05,
+                        experiment_id=exp.experiment_id,
                         round_number=round_num,
                         client_id=client_id,
                     ),
@@ -191,11 +198,11 @@ class TestCrossRepositoryOperations:
 
         # Add metrics via metrics repository
         metrics = [
-            PerformanceMetric(name="rmse", value=1.0, round_number=1),
-            PerformanceMetric(name="rmse", value=0.9, round_number=2),
-            PerformanceMetric(name="rmse", value=0.8, round_number=3),
+            PerformanceMetric(name="rmse", value=1.0, experiment_id=exp.experiment_id, round_number=1),
+            PerformanceMetric(name="rmse", value=0.9, experiment_id=exp.experiment_id, round_number=2),
+            PerformanceMetric(name="rmse", value=0.8, experiment_id=exp.experiment_id, round_number=3),
         ]
-        await metrics_repo.add_batch(metrics, exp.experiment_id)
+        await metrics_repo.add_batch(metrics)
 
         # Retrieve via metrics repository
         retrieved_metrics = await metrics_repo.get_by_experiment(exp.experiment_id)
@@ -217,8 +224,22 @@ class TestCrossRepositoryOperations:
         """Deleting experiment cascades to delete related metrics."""
         # Create experiment with metrics embedded in entity
         exp = CentralizedExperiment(name="Cascade Test", config=config)
-        exp.add_epoch_metric(PerformanceMetric(name="rmse", value=0.9, round_number=1))
-        exp.add_epoch_metric(PerformanceMetric(name="loss", value=0.5, round_number=2))
+        exp.add_epoch_metric(
+            PerformanceMetric(
+                name="rmse",
+                value=0.9,
+                experiment_id=exp.experiment_id,
+                round_number=1,
+            )
+        )
+        exp.add_epoch_metric(
+            PerformanceMetric(
+                name="loss",
+                value=0.5,
+                experiment_id=exp.experiment_id,
+                round_number=2,
+            )
+        )
         await experiment_repo.add(exp)
 
         # Commit to ensure data is persisted
@@ -358,8 +379,12 @@ class TestDataIntegrity:
 
         precise_value = 0.123456789
         await metrics_repo.add(
-            PerformanceMetric(name="rmse", value=precise_value, round_number=1),
-            exp.experiment_id,
+            PerformanceMetric(
+                name="rmse",
+                value=precise_value,
+                experiment_id=exp.experiment_id,
+                round_number=1,
+            )
         )
 
         retrieved = await metrics_repo.get_by_experiment(exp.experiment_id)

@@ -289,6 +289,7 @@ class ExperimentRepository(BaseRepository[Experiment, str]):
             pm = PerformanceMetric(
                 name=metric_model.name,
                 value=metric_model.value,
+                experiment_id=metric_model.experiment_id,
                 context=metric_model.context,
                 round_number=metric_model.round_number,
                 client_id=metric_model.client_id,

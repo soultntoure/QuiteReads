@@ -14,6 +14,7 @@ class PerformanceMetric:
 
     name: str  # 'rmse', 'mae', 'training_time', 'loss'
     value: float
+    experiment_id: str  # UUID of the experiment this metric belongs to
     context: Optional[str] = None  # 'global', 'client_1', 'round_5'
     round_number: Optional[int] = None
     client_id: Optional[str] = None

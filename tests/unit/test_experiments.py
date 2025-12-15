@@ -287,7 +287,12 @@ class TestCentralizedExperiment:
         self, centralized_experiment: CentralizedExperiment
     ) -> None:
         """Can add epoch metrics."""
-        metric = PerformanceMetric(name="rmse", value=0.95, round_number=1)
+        metric = PerformanceMetric(
+            name="rmse",
+            value=0.95,
+            experiment_id=centralized_experiment.experiment_id,
+            round_number=1,
+        )
         centralized_experiment.add_epoch_metric(metric)
         assert len(centralized_experiment.epoch_metrics) == 1
         assert centralized_experiment.epoch_metrics[0] == metric
@@ -297,7 +302,12 @@ class TestCentralizedExperiment:
     ) -> None:
         """Can add multiple epoch metrics."""
         for i in range(5):
-            metric = PerformanceMetric(name="rmse", value=1.0 - i * 0.1, round_number=i)
+            metric = PerformanceMetric(
+                name="rmse",
+                value=1.0 - i * 0.1,
+                experiment_id=centralized_experiment.experiment_id,
+                round_number=i,
+            )
             centralized_experiment.add_epoch_metric(metric)
         assert len(centralized_experiment.epoch_metrics) == 5
 
@@ -305,7 +315,12 @@ class TestCentralizedExperiment:
         self, centralized_experiment: CentralizedExperiment
     ) -> None:
         """get_training_timeline returns epoch_metrics."""
-        metric = PerformanceMetric(name="rmse", value=0.9, round_number=1)
+        metric = PerformanceMetric(
+            name="rmse",
+            value=0.9,
+            experiment_id=centralized_experiment.experiment_id,
+            round_number=1,
+        )
         centralized_experiment.add_epoch_metric(metric)
         timeline = centralized_experiment.get_training_timeline()
         assert timeline == centralized_experiment.epoch_metrics
@@ -399,7 +414,12 @@ class TestFederatedExperimentMetrics:
         self, federated_experiment: FederatedExperiment
     ) -> None:
         """Can add round metrics."""
-        metric = PerformanceMetric(name="rmse", value=0.9, round_number=1)
+        metric = PerformanceMetric(
+            name="rmse",
+            value=0.9,
+            experiment_id=federated_experiment.experiment_id,
+            round_number=1,
+        )
         federated_experiment.add_round_metric(metric)
         assert len(federated_experiment.round_metrics) == 1
 
@@ -407,7 +427,12 @@ class TestFederatedExperimentMetrics:
         self, federated_experiment: FederatedExperiment
     ) -> None:
         """get_training_timeline returns round_metrics."""
-        metric = PerformanceMetric(name="rmse", value=0.9, round_number=1)
+        metric = PerformanceMetric(
+            name="rmse",
+            value=0.9,
+            experiment_id=federated_experiment.experiment_id,
+            round_number=1,
+        )
         federated_experiment.add_round_metric(metric)
         timeline = federated_experiment.get_training_timeline()
         assert timeline == federated_experiment.round_metrics
@@ -416,7 +441,12 @@ class TestFederatedExperimentMetrics:
         self, federated_experiment: FederatedExperiment
     ) -> None:
         """Adding client metric creates client entry if not exists."""
-        metric = PerformanceMetric(name="loss", value=0.5, client_id="client_1")
+        metric = PerformanceMetric(
+            name="loss",
+            value=0.5,
+            experiment_id=federated_experiment.experiment_id,
+            client_id="client_1",
+        )
         federated_experiment.add_client_metric("client_1", metric)
         assert "client_1" in federated_experiment.client_metrics
 
@@ -424,8 +454,18 @@ class TestFederatedExperimentMetrics:
         self, federated_experiment: FederatedExperiment
     ) -> None:
         """Adding client metric appends to existing client list."""
-        metric1 = PerformanceMetric(name="loss", value=0.5, round_number=1)
-        metric2 = PerformanceMetric(name="loss", value=0.4, round_number=2)
+        metric1 = PerformanceMetric(
+            name="loss",
+            value=0.5,
+            experiment_id=federated_experiment.experiment_id,
+            round_number=1,
+        )
+        metric2 = PerformanceMetric(
+            name="loss",
+            value=0.4,
+            experiment_id=federated_experiment.experiment_id,
+            round_number=2,
+        )
         federated_experiment.add_client_metric("client_1", metric1)
         federated_experiment.add_client_metric("client_1", metric2)
         assert len(federated_experiment.client_metrics["client_1"]) == 2
@@ -435,7 +475,11 @@ class TestFederatedExperimentMetrics:
     ) -> None:
         """get_client_ids returns all participating client IDs."""
         for i in range(3):
-            metric = PerformanceMetric(name="loss", value=0.5)
+            metric = PerformanceMetric(
+                name="loss",
+                value=0.5,
+                experiment_id=federated_experiment.experiment_id,
+            )
             federated_experiment.add_client_metric(f"client_{i}", metric)
         client_ids = federated_experiment.get_client_ids()
         assert len(client_ids) == 3
@@ -448,8 +492,18 @@ class TestFederatedExperimentMetrics:
     ) -> None:
         """get_convergence_by_round extracts RMSE values."""
         for i in range(5):
-            rmse = PerformanceMetric(name="rmse", value=1.0 - i * 0.1, round_number=i)
-            loss = PerformanceMetric(name="loss", value=0.5, round_number=i)
+            rmse = PerformanceMetric(
+                name="rmse",
+                value=1.0 - i * 0.1,
+                experiment_id=federated_experiment.experiment_id,
+                round_number=i,
+            )
+            loss = PerformanceMetric(
+                name="loss",
+                value=0.5,
+                experiment_id=federated_experiment.experiment_id,
+                round_number=i,
+            )
             federated_experiment.add_round_metric(rmse)
             federated_experiment.add_round_metric(loss)
         convergence = federated_experiment.get_convergence_by_round()
@@ -467,7 +521,11 @@ class TestFederatedExperimentMetrics:
         self, federated_experiment: FederatedExperiment
     ) -> None:
         """get_client_contribution_variance returns None with single client."""
-        metric = PerformanceMetric(name="loss", value=0.5)
+        metric = PerformanceMetric(
+            name="loss",
+            value=0.5,
+            experiment_id=federated_experiment.experiment_id,
+        )
         federated_experiment.add_client_metric("client_1", metric)
         assert federated_experiment.get_client_contribution_variance() is None
 
@@ -479,11 +537,21 @@ class TestFederatedExperimentMetrics:
         # Counts: [2, 4], Mean: 3, Variance: ((2-3)^2 + (4-3)^2) / 2 = 1
         for _ in range(2):
             federated_experiment.add_client_metric(
-                "client_1", PerformanceMetric(name="loss", value=0.5)
+                "client_1",
+                PerformanceMetric(
+                    name="loss",
+                    value=0.5,
+                    experiment_id=federated_experiment.experiment_id,
+                ),
             )
         for _ in range(4):
             federated_experiment.add_client_metric(
-                "client_2", PerformanceMetric(name="loss", value=0.5)
+                "client_2",
+                PerformanceMetric(
+                    name="loss",
+                    value=0.5,
+                    experiment_id=federated_experiment.experiment_id,
+                ),
             )
         variance = federated_experiment.get_client_contribution_variance()
         assert variance == 1.0
@@ -533,8 +601,18 @@ class TestPolymorphism:
         federated_experiment: FederatedExperiment,
     ) -> None:
         """get_training_timeline returns appropriate metrics per type."""
-        epoch_metric = PerformanceMetric(name="rmse", value=0.9, round_number=1)
-        round_metric = PerformanceMetric(name="rmse", value=0.85, round_number=1)
+        epoch_metric = PerformanceMetric(
+            name="rmse",
+            value=0.9,
+            experiment_id=centralized_experiment.experiment_id,
+            round_number=1,
+        )
+        round_metric = PerformanceMetric(
+            name="rmse",
+            value=0.85,
+            experiment_id=federated_experiment.experiment_id,
+            round_number=1,
+        )
 
         centralized_experiment.add_epoch_metric(epoch_metric)
         federated_experiment.add_round_metric(round_metric)
