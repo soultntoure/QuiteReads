@@ -3,7 +3,6 @@
 Handles persistence of experiment domain entities using SQLAlchemy.
 """
 
-from dataclasses import asdict
 from typing import List, Optional
 
 from sqlalchemy import select

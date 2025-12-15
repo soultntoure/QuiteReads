@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.metrics import PerformanceMetric
 from app.infrastructure.models import MetricModel
 from app.infrastructure.repositories.base_repository import BaseRepository
-from app.utils.exceptions import EntityNotFoundError, RepositoryError
+from app.utils.exceptions import RepositoryError
 
 
 class MetricsRepository(BaseRepository[PerformanceMetric, int]):
