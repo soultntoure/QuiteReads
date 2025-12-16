@@ -83,9 +83,15 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 async def init_db(database_url: str = DATABASE_URL) -> None:
-    """Initialize database tables.
+    """Initialize database tables (FOR TESTING ONLY).
 
-    Creates all tables defined in models.
+    WARNING: This bypasses Alembic migrations and creates tables directly
+    from SQLAlchemy models. Use this ONLY for:
+    - Test database setup (pytest fixtures)
+    - Local development quick setup
+
+    For production and normal development, use Alembic migrations:
+        alembic upgrade head
 
     Args:
         database_url: PostgreSQL connection string.
