@@ -9,8 +9,7 @@ from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from app.core.metrics import PerformanceMetric
-from app.infrastructure.repositories.experiment_repository import ExperimentRepository
-from app.infrastructure.repositories.metrics_repository import MetricsRepository
+from app.domain.repositories import IExperimentRepository, IMetricsRepository
 from app.utils.exceptions import ConfigurationError, EntityNotFoundError
 
 
@@ -27,8 +26,8 @@ class MetricsService:
 
     def __init__(
         self,
-        metrics_repository: MetricsRepository,
-        experiment_repository: ExperimentRepository,
+        metrics_repository: IMetricsRepository,
+        experiment_repository: IExperimentRepository,
     ):
         self._metrics_repo = metrics_repository
         self._experiment_repo = experiment_repository

@@ -2,7 +2,7 @@
 Experiment Service Layer
 
 Handles business logic for experiment operations.
-Coordinates between API layer and repository layer.
+implements use cases for experiments/metrics.
 """
 
 from datetime import datetime
@@ -17,8 +17,7 @@ from app.core.experiments import (
     FederatedExperiment,
 )
 from app.core.metrics import PerformanceMetric
-from app.infrastructure.repositories.experiment_repository import ExperimentRepository
-from app.infrastructure.repositories.metrics_repository import MetricsRepository
+from app.domain.repositories import IExperimentRepository, IMetricsRepository
 from app.utils.exceptions import ConfigurationError, EntityNotFoundError
 from app.utils.types import AggregationStrategy, ExperimentStatus
 
@@ -36,8 +35,8 @@ class ExperimentService:
 
     def __init__(
         self,
-        experiment_repository: ExperimentRepository,
-        metrics_repository: MetricsRepository,
+        experiment_repository: IExperimentRepository,
+        metrics_repository: IMetricsRepository,
     ):
         self._experiment_repo = experiment_repository
         self._metrics_repo = metrics_repository
