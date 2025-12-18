@@ -74,14 +74,15 @@ class BaseRepository(ABC, Generic[T, ID]):
         ...
 
     @abstractmethod
-    async def delete(self, entity_id: ID) -> bool:
+    async def delete(self, entity_id: ID) -> None:
         """Delete an entity by its identifier.
 
         Args:
             entity_id: Unique identifier of the entity to delete.
 
-        Returns:
-            True if entity was deleted, False if not found.
+        Raises:
+            EntityNotFoundError: If entity not found.
+            RepositoryError: If deletion fails.
         """
         ...
 

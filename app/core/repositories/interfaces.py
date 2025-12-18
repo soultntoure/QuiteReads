@@ -93,14 +93,15 @@ class IExperimentRepository(Protocol):
         """
         ...
 
-    async def delete(self, entity_id: str) -> bool:
+    async def delete(self, entity_id: str) -> None:
         """Delete an experiment by ID.
 
         Args:
             entity_id: Experiment UUID.
 
-        Returns:
-            True if deleted, False if not found.
+        Raises:
+            EntityNotFoundError: If experiment not found.
+            RepositoryError: If deletion fails.
         """
         ...
 

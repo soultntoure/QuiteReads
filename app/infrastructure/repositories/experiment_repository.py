@@ -154,25 +154,30 @@ class ExperimentRepository(BaseRepository[Experiment, str]):
         except Exception as e:
             raise RepositoryError(f"Failed to update experiment: {e}") from e
 
-    async def delete(self, entity_id: str) -> bool:
+    async def delete(self, entity_id: str) -> None:
         """Delete an experiment by ID.
 
         Args:
             entity_id: Experiment UUID.
 
-        Returns:
-            True if deleted, False if not found.
+        Raises:
+            EntityNotFoundError: If experiment not found.
+            RepositoryError: If deletion fails.
         """
-        stmt = select(ExperimentModel).where(ExperimentModel.id == entity_id)
-        result = await self._session.execute(stmt)
-        model = result.scalar_one_or_none()
+        try:
+            stmt = select(ExperimentModel).where(ExperimentModel.id == entity_id)
+            result = await self._session.execute(stmt)
+            model = result.scalar_one_or_none()
 
-        if model is None:
-            return False
+            if model is None:
+                raise EntityNotFoundError(f"Experiment {entity_id} not found")
 
-        await self._session.delete(model)
-        await self._session.flush()
-        return True
+            await self._session.delete(model)
+            await self._session.flush()
+        except EntityNotFoundError:
+            raise
+        except Exception as e:
+            raise RepositoryError(f"Failed to delete experiment: {e}") from e
 
     async def exists(self, entity_id: str) -> bool:
         """Check if experiment exists.

@@ -275,10 +275,6 @@ class ExperimentService:
         Raises:
             EntityNotFoundError: If experiment not found
         """
-        exists = await self._experiment_repo.exists(experiment_id)
-        if not exists:
-            raise EntityNotFoundError(f"Experiment with id {experiment_id} not found")
-
         await self._metrics_repo.delete_by_experiment(experiment_id)
         await self._experiment_repo.delete(experiment_id)
 

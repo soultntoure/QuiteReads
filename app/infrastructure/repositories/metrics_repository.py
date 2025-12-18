@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.metrics import PerformanceMetric
 from app.infrastructure.models import MetricModel
 from app.infrastructure.repositories.base_repository import BaseRepository
-from app.utils.exceptions import RepositoryError
+from app.utils.exceptions import EntityNotFoundError, RepositoryError
 
 
 class MetricsRepository(BaseRepository[PerformanceMetric, int]):
@@ -218,7 +218,7 @@ class MetricsRepository(BaseRepository[PerformanceMetric, int]):
 
     async def get_metric_stats(
         self, experiment_id: str, metric_name: str
-    ) -> dict:
+    ) -> Optional[dict]:
         """Get aggregate statistics for a metric.
 
         Args:
@@ -226,7 +226,7 @@ class MetricsRepository(BaseRepository[PerformanceMetric, int]):
             metric_name: Name of metric.
 
         Returns:
-            Dict with min, max, avg, count.
+            Dict with min, max, avg, count, or None if no metrics exist.
         """
         stmt = select(
             func.min(MetricModel.value).label("min"),
@@ -239,6 +239,10 @@ class MetricsRepository(BaseRepository[PerformanceMetric, int]):
         )
         result = await self._session.execute(stmt)
         row = result.one()
+
+        # Return None if no metrics found (count will be 0)
+        if row.count == 0:
+            return None
 
         return {
             "min": row.min,
@@ -258,25 +262,30 @@ class MetricsRepository(BaseRepository[PerformanceMetric, int]):
         """
         raise NotImplementedError("Metrics are immutable once recorded")
 
-    async def delete(self, entity_id: int) -> bool:
+    async def delete(self, entity_id: int) -> None:
         """Delete a metric by ID.
 
         Args:
             entity_id: Metric primary key.
 
-        Returns:
-            True if deleted, False if not found.
+        Raises:
+            EntityNotFoundError: If metric not found.
+            RepositoryError: If deletion fails.
         """
-        stmt = select(MetricModel).where(MetricModel.id == entity_id)
-        result = await self._session.execute(stmt)
-        model = result.scalar_one_or_none()
+        try:
+            stmt = select(MetricModel).where(MetricModel.id == entity_id)
+            result = await self._session.execute(stmt)
+            model = result.scalar_one_or_none()
 
-        if model is None:
-            return False
+            if model is None:
+                raise EntityNotFoundError(f"Metric {entity_id} not found")
 
-        await self._session.delete(model)
-        await self._session.flush()
-        return True
+            await self._session.delete(model)
+            await self._session.flush()
+        except EntityNotFoundError:
+            raise
+        except Exception as e:
+            raise RepositoryError(f"Failed to delete metric: {e}") from e
 
     async def delete_by_experiment(self, experiment_id: str) -> int:
         """Delete all metrics for an experiment.

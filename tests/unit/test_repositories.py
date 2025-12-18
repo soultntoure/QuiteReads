@@ -358,17 +358,16 @@ class TestExperimentRepositoryDelete:
     ) -> None:
         """Can delete existing experiment."""
         await experiment_repo.add(centralized_experiment)
-        result = await experiment_repo.delete(centralized_experiment.experiment_id)
+        await experiment_repo.delete(centralized_experiment.experiment_id)
 
-        assert result is True
         assert await experiment_repo.get_by_id(centralized_experiment.experiment_id) is None
 
-    async def test_delete_nonexistent_returns_false(
+    async def test_delete_nonexistent_raises_error(
         self, experiment_repo: ExperimentRepository
     ) -> None:
-        """Deleting nonexistent experiment returns False."""
-        result = await experiment_repo.delete("nonexistent-id")
-        assert result is False
+        """Deleting nonexistent experiment raises EntityNotFoundError."""
+        with pytest.raises(EntityNotFoundError, match="Experiment nonexistent-id not found"):
+            await experiment_repo.delete("nonexistent-id")
 
 
 class TestExperimentRepositoryExists:
