@@ -4,7 +4,15 @@
       "Bash(cat:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(git -C \"c:\\Users\\Asus\\Documents\\MMU\\BCS\\FYP\\FYP2\\fedrec-dashboard\" log --oneline -20)",
+      "Bash(pytest:*)",
+      "Bash(python:*)",
+      "Bash(tree:*)",
+      "Bash(git reset:*)",
+      "Bash(mkdir:*)",
+      "Bash(git restore:*)",
+      "Bash(uv run python:*)"
     ],
     "deny": [],
     "ask": []
