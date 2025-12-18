@@ -5,11 +5,10 @@ Handles business logic for performance metrics operations.
 Coordinates between API layer and repository layer.
 """
 
-from datetime import datetime
 from typing import Any, Dict, List, Optional
 
 from app.core.metrics import PerformanceMetric
-from app.domain.repositories import IExperimentRepository, IMetricsRepository
+from app.core.repositories import IExperimentRepository, IMetricsRepository
 from app.utils.exceptions import ConfigurationError, EntityNotFoundError
 
 

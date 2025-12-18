@@ -16,8 +16,7 @@ from app.core.experiments import (
     ExperimentMetrics,
     FederatedExperiment,
 )
-from app.core.metrics import PerformanceMetric
-from app.domain.repositories import IExperimentRepository, IMetricsRepository
+from app.core.repositories import IExperimentRepository, IMetricsRepository
 from app.utils.exceptions import ConfigurationError, EntityNotFoundError
 from app.utils.types import AggregationStrategy, ExperimentStatus
 
