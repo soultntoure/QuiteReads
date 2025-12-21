@@ -91,11 +91,6 @@ class ExperimentService:
         Raises:
             ConfigurationError: If configuration is invalid
         """
-        if n_clients < 2 or n_clients > 100:
-            raise ConfigurationError("n_clients must be between 2 and 100")
-        if n_rounds < 1 or n_rounds > 500:
-            raise ConfigurationError("n_rounds must be between 1 and 500")
-
         experiment = FederatedExperiment(
             experiment_id=str(uuid4()),
             name=name,

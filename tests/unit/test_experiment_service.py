@@ -162,12 +162,12 @@ class TestCreateFederatedExperiment:
         self, experiment_service: ExperimentService, default_config: Configuration
     ):
         """Creating federated experiment with invalid n_clients raises error."""
-        with pytest.raises(ConfigurationError, match="n_clients must be between"):
+        with pytest.raises(ConfigurationError, match="Federated experiment requires at least 2 clients"):
             await experiment_service.create_federated_experiment(
                 name="Invalid", config=default_config, n_clients=1, n_rounds=10
             )
 
-        with pytest.raises(ConfigurationError, match="n_clients must be between"):
+        with pytest.raises(ConfigurationError, match="Number of clients cannot exceed 100"):
             await experiment_service.create_federated_experiment(
                 name="Invalid", config=default_config, n_clients=101, n_rounds=10
             )
@@ -177,12 +177,12 @@ class TestCreateFederatedExperiment:
         self, experiment_service: ExperimentService, default_config: Configuration
     ):
         """Creating federated experiment with invalid n_rounds raises error."""
-        with pytest.raises(ConfigurationError, match="n_rounds must be between"):
+        with pytest.raises(ConfigurationError, match="Number of rounds must be at least 1"):
             await experiment_service.create_federated_experiment(
                 name="Invalid", config=default_config, n_clients=5, n_rounds=0
             )
 
-        with pytest.raises(ConfigurationError, match="n_rounds must be between"):
+        with pytest.raises(ConfigurationError, match="Number of rounds cannot exceed 500"):
             await experiment_service.create_federated_experiment(
                 name="Invalid", config=default_config, n_clients=5, n_rounds=501
             )
