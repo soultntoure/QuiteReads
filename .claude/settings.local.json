@@ -12,7 +12,9 @@
       "Bash(git reset:*)",
       "Bash(mkdir:*)",
       "Bash(git restore:*)",
-      "Bash(uv run python:*)"
+      "Bash(uv run python:*)",
+      "Bash(find:*)",
+      "Bash(wc:*)"
     ],
     "deny": [],
     "ask": []
