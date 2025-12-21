@@ -1,6 +1,6 @@
-"""SQLAlchemy ORM models for persistence.
+"""Database models.
 
-Maps domain entities to database tables.
+SQLAlchemy ORM definitions mapping domain entities to database tables.
 """
 
 from datetime import datetime

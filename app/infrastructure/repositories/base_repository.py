@@ -1,7 +1,6 @@
-"""Abstract repository interface.
+"""Base repository.
 
-Defines the contract for all repository implementations,
-following the Repository pattern for clean architecture.
+Abstract base class implementing the repository pattern for data persistence.
 """
 
 from abc import ABC, abstractmethod

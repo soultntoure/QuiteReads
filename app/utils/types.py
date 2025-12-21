@@ -1,4 +1,7 @@
-"""Shared type definitions and enums."""
+"""Type definitions.
+
+Shared Enums and type aliases used throughout the application.
+"""
 
 from enum import Enum
 

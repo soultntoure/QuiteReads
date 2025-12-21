@@ -1,4 +1,7 @@
-"""Experiment configuration models."""
+"""Configuration models.
+
+Experiment configuration classes and validation logic.
+"""
 
 from dataclasses import dataclass
 from typing import Optional

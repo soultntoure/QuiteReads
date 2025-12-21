@@ -1,4 +1,7 @@
-"""Performance metrics for experiments."""
+"""Metrics entities.
+
+Domain definitions for performance metrics and experiment results.
+"""
 
 # trunk-ignore(ruff/F401)
 from dataclasses import dataclass, field

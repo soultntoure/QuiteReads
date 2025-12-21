@@ -1,4 +1,4 @@
-"""Metrics repository implementation.
+"""Metrics repository.
 
 Handles persistence of performance metrics using SQLAlchemy.
 Provides specialized queries for metrics analysis.

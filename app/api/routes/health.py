@@ -1,3 +1,8 @@
+"""Health check API.
+
+Endpoint for monitoring application health and status.
+"""
+
 from fastapi import APIRouter, Response
 
 router = APIRouter()

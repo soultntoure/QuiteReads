@@ -1,3 +1,8 @@
+"""Metrics API routes.
+
+Endpoints for recording and retrieving experiment performance metrics.
+"""
+
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Optional

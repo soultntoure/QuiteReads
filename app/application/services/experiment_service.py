@@ -1,8 +1,6 @@
-"""
-Experiment Service Layer
+"""Experiment service.
 
-Handles business logic for experiment operations.
-implements use cases for experiments/metrics.
+Business logic layer for managing experiment operations and lifecycle.
 """
 
 from datetime import datetime

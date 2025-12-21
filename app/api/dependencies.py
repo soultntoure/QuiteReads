@@ -1,4 +1,7 @@
-"""Dependency injection setup for API routes."""
+"""API dependencies.
+
+Dependency injection setup for API routes and services.
+"""
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.infrastructure import get_session
 from app.infrastructure.repositories import ExperimentRepository, MetricsRepository

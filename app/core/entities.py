@@ -1,4 +1,7 @@
-"""Core domain entities (dataclasses)."""
+"""Domain entities.
+
+Core dataclasses representing domain objects.
+"""
 
 from dataclasses import dataclass, field
 from typing import Dict, Optional

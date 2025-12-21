@@ -1,4 +1,7 @@
-"""Experiment management routes."""
+"""Experiment API routes.
+
+Endpoints for managing centralized and federated learning experiments.
+"""
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.infrastructure import get_session

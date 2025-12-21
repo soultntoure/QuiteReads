@@ -1,3 +1,9 @@
+"""
+Experiment schemas.
+
+Pydantic models for experiment creation, updates, and responses.
+"""
+
 from pydantic import BaseModel, Field
 from typing import Optional, List
 from enum import Enum

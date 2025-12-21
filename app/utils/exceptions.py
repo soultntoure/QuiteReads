@@ -1,4 +1,7 @@
-"""Custom application exceptions."""
+"""Application exceptions.
+
+Custom exception classes for error handling across the application.
+"""
 
 
 class DataLoadError(Exception):
