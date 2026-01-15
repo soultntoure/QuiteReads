@@ -15,7 +15,9 @@
       "Bash(uv run python:*)",
       "Bash(find:*)",
       "Bash(wc:*)",
-      "Bash(claude mcp add:*)"
+      "Bash(claude mcp add:*)",
+      "mcp__obsidian__list_allowed_directories",
+      "mcp__obsidian__search_files"
     ],
     "deny": [],
     "ask": []
