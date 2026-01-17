@@ -1,3 +1,6 @@
+# Project Structure
+
+```text
 src/
 ├── __init__.py - Main package initialization for FedRec Experiments
 │
@@ -34,10 +37,12 @@ src/
 └── callbacks/
     ├── __init__.py - Callbacks package initialization
     └── epoch_metrics_callback.py - EpochMetricsCallback for capturing per-epoch training and validation metrics for convergence analysis plots
-Summary by Module:
+```
 
-data/ - Data loading and preprocessing infrastructure for both centralized and federated scenarios
-models/ - Neural network architectures and PyTorch Lightning training modules for matrix factorization
-utils/ - Helper utilities for reproducibility and device management
-federated/ - Complete federated learning implementation using Flower framework with custom aggregation strategy
-callbacks/ - Custom PyTorch Lightning callbacks for metric tracking during training
+## Summary by Module
+
+- **data/**: Data loading and preprocessing infrastructure for both centralized and federated scenarios
+- **models/**: Neural network architectures and PyTorch Lightning training modules for matrix factorization
+- **utils/**: Helper utilities for reproducibility and device management
+- **federated/**: Complete federated learning implementation using Flower framework with custom aggregation strategy
+- **callbacks/**: Custom PyTorch Lightning callbacks for metric tracking during training
