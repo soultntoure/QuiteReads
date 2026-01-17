@@ -17,7 +17,13 @@
       "Bash(wc:*)",
       "Bash(claude mcp add:*)",
       "mcp__obsidian__list_allowed_directories",
-      "mcp__obsidian__search_files"
+      "mcp__obsidian__search_files",
+      "mcp__obsidian__list_directory",
+      "mcp__obsidian__directory_tree",
+      "mcp__obsidian__read_multiple_files",
+      "mcp__obsidian__read_text_file",
+      "mcp__obsidian__write_file",
+      "mcp__obsidian__get_file_info"
     ],
     "deny": [],
     "ask": []
