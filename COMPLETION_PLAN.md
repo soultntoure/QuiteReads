@@ -1,7 +1,7 @@
 # FedRec Dashboard - 15-Day Completion Plan
 
-**Start Date:** January 7, 2026
-**Target Completion:** January 22, 2026
+**Start Date:** January 17, 2026
+**Target Completion:** January 23, 2026
 **Project:** Federated Learning Book Recommendation System (FYP)
 
 ---
