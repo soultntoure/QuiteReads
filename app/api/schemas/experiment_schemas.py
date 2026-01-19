@@ -58,7 +58,7 @@ class AggregationStrategy(str, Enum):
     When adding new strategies, ensure they are also added to app.utils.types.AggregationStrategy
     and the mapping in to_domain() below.
     """
-    FedAvg = "FedAvg"
+    FEDAVG = "FedAvg"
 
     def to_domain(self) -> "DomainAggregationStrategy":
         """Convert schema AggregationStrategy to domain AggregationStrategy.
@@ -69,7 +69,7 @@ class AggregationStrategy(str, Enum):
         
         
         mapping = {
-            AggregationStrategy.FedAvg: DomainAggregationStrategy.FEDAVG,
+            AggregationStrategy.FEDAVG: DomainAggregationStrategy.FEDAVG,
         }
         
         domain_strategy = mapping.get(self)
