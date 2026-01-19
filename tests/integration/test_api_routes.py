@@ -452,8 +452,8 @@ class TestCompleteExperiment:
         assert response.status_code == 200
         data = response.json()
         assert data["status"] == "completed"
-        assert data["metrics"]["rmse"] == 0.85
-        assert data["metrics"]["mae"] == 0.65
+        assert data["metrics"]["final_rmse"] == 0.85
+        assert data["metrics"]["final_mae"] == 0.65
         assert data["metrics"]["training_time_seconds"] == 120.5
 
     def test_complete_nonexistent_experiment(self, client: TestClient):
@@ -632,7 +632,7 @@ class TestAddMetricsBatch:
 
         assert response.status_code == 201
         data = response.json()
-        assert len(data["metrics"]) == 3
+        assert len(data) == 3
 
     def test_add_metrics_batch_nonexistent_experiment(self, client: TestClient):
         """Adding batch metrics to nonexistent experiment returns 404."""
@@ -723,7 +723,7 @@ class TestGetMetrics:
         })
 
         # Filter by rmse
-        response = client.get(f"/experiments/{experiment_id}/metrics?metric_name=rmse")
+        response = client.get(f"/experiments/{experiment_id}/metrics?name=rmse")
 
         assert response.status_code == 200
         data = response.json()
@@ -761,7 +761,7 @@ class TestDeleteMetrics:
 
         # Verify metrics are gone
         get_response = client.get(f"/experiments/{experiment_id}/metrics")
-        assert get_response.json()["total"] == 0
+        assert get_response.json()["count"] == 0
 
     def test_delete_metrics_nonexistent_experiment(self, client: TestClient):
         """Deleting metrics for nonexistent experiment returns 404."""
@@ -809,7 +809,7 @@ class TestFullExperimentLifecycle:
 
         # 4. Verify metrics were added
         metrics_response = client.get(f"/experiments/{experiment_id}/metrics")
-        assert metrics_response.json()["total"] == 10  # 5 epochs * 2 metrics
+        assert metrics_response.json()["count"] == 10  # 5 epochs * 2 metrics
 
         # 5. Complete experiment with final metrics
         complete_response = client.post(f"/experiments/{experiment_id}/complete", json={
@@ -819,7 +819,7 @@ class TestFullExperimentLifecycle:
         })
         assert complete_response.status_code == 200
         assert complete_response.json()["status"] == "completed"
-        assert complete_response.json()["metrics"]["rmse"] == 0.75
+        assert complete_response.json()["metrics"]["final_rmse"] == 0.75
 
         # 6. Verify final state
         final_response = client.get(f"/experiments/{experiment_id}")
