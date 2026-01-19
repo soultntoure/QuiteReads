@@ -169,9 +169,9 @@ class ExperimentResponse(BaseModel):
     updated_at: datetime = Field(..., description="Timestamp when experiment was last updated")
 
     @field_serializer('created_at', 'updated_at')
-    def serialize_datetime(self, dt: datetime, _info) -> Optional[str]:
+    def serialize_datetime(self, dt: datetime, _info) -> str:
         """Serialize datetime to ISO format"""
-        return dt.isoformat() if dt else None
+        return dt.isoformat()
 
 
 class ExperimentListResponse(BaseModel):
