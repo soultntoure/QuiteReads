@@ -5,9 +5,14 @@ Pydantic models for experiment creation, updates, and responses.
 """
 
 from pydantic import BaseModel, Field, ConfigDict, field_serializer
-from typing import Optional, List
+from typing import Optional, List, TYPE_CHECKING
 from enum import Enum
 from datetime import datetime
+
+if TYPE_CHECKING:
+    from app.core.experiments import Experiment
+    from app.core.configuration import Configuration as DomainConfiguration
+    from app.core.metrics import ExperimentMetrics as DomainExperimentMetrics
 
 
 class ExperimentType(str, Enum):
@@ -45,6 +50,23 @@ class ConfigurationSchema(BaseModel):
     batch_size: int = Field(..., gt=0, description="Batch size must be positive")
     epochs: int = Field(..., gt=0, description="Number of epochs must be positive")
     model_type: str = Field(..., min_length=1, description="Type of model to train")
+
+    @classmethod
+    def from_domain(cls, config: "DomainConfiguration") -> "ConfigurationSchema":
+        """Convert domain Configuration to schema.
+
+        Args:
+            config: Domain Configuration entity
+
+        Returns:
+            ConfigurationSchema instance
+        """
+        return cls(
+            learning_rate=config.learning_rate,
+            batch_size=config.batch_size if config.batch_size else 32,
+            epochs=config.n_epochs,
+            model_type=config.model_type.value,
+        )
 
 
 class CreateCentralizedExperimentRequest(BaseModel):
@@ -126,6 +148,25 @@ class ExperimentMetricsSchema(BaseModel):
     final_mae: Optional[float] = Field(None, ge=0, description="Final MAE score")
     training_time_seconds: Optional[float] = Field(None, ge=0, description="Total training time in seconds")
 
+    @classmethod
+    def from_domain(cls, metrics: Optional["DomainExperimentMetrics"]) -> "ExperimentMetricsSchema":
+        """Convert domain ExperimentMetrics to schema.
+
+        Args:
+            metrics: Domain ExperimentMetrics entity or None
+
+        Returns:
+            ExperimentMetricsSchema instance
+        """
+        if not metrics:
+            return cls()
+
+        return cls(
+            final_rmse=metrics.rmse,
+            final_mae=metrics.mae,
+            training_time_seconds=metrics.training_time_seconds,
+        )
+
 
 class ExperimentResponse(BaseModel):
     """Unified response for both centralized and federated experiments"""
@@ -156,7 +197,7 @@ class ExperimentResponse(BaseModel):
         }
     )
 
-    id: int = Field(..., description="Experiment ID")
+    id: str = Field(..., description="Experiment ID (UUID)")
     name: str = Field(..., description="Experiment name")
     type: ExperimentType = Field(..., description="Type of experiment (centralized or federated)")
     status: ExperimentStatus = Field(..., description="Current status of the experiment")
@@ -172,6 +213,37 @@ class ExperimentResponse(BaseModel):
     def serialize_datetime(self, dt: datetime, _info) -> str:
         """Serialize datetime to ISO format"""
         return dt.isoformat()
+
+    @classmethod
+    def from_domain(cls, experiment: "Experiment") -> "ExperimentResponse":
+        """Convert domain Experiment entity to response schema.
+
+        Args:
+            experiment: Domain Experiment entity (CentralizedExperiment or FederatedExperiment)
+
+        Returns:
+            ExperimentResponse instance
+        """
+        # Import here to avoid circular imports
+        from app.core.experiments import FederatedExperiment
+
+        return cls(
+            id=experiment.experiment_id,
+            name=experiment.name,
+            type=ExperimentType(experiment.experiment_type),
+            status=ExperimentStatus(experiment.status.value),
+            config=ConfigurationSchema.from_domain(experiment.config),
+            metrics=ExperimentMetricsSchema.from_domain(experiment.metrics),
+            n_clients=experiment.n_clients if isinstance(experiment, FederatedExperiment) else None,
+            n_rounds=experiment.n_rounds if isinstance(experiment, FederatedExperiment) else None,
+            aggregation_strategy=(
+                AggregationStrategy(experiment.aggregation_strategy.value)
+                if isinstance(experiment, FederatedExperiment)
+                else None
+            ),
+            created_at=experiment.created_at,
+            updated_at=experiment.completed_at if experiment.completed_at else experiment.created_at,
+        )
 
 
 class ExperimentListResponse(BaseModel):
