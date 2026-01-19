@@ -304,7 +304,7 @@ class ExperimentResponse(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "examples": {
-                "id": 1,
+                "id": "550e8400-e29b-41d4-a716-446655440000",
                 "name": "Centralized Matrix Factorization Exp 1",
                 "type": "centralized",
                 "status": "completed",
@@ -385,7 +385,7 @@ class ExperimentListResponse(BaseModel):
                 "count": 2,
                 "experiments": [
                     {
-                        "id": 1,
+                        "id": "550e8400-e29b-41d4-a716-446655440000",
                         "name": "Centralized Matrix Factorization Exp 1",
                         "type": "centralized",
                         "status": "completed",
