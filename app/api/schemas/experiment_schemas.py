@@ -32,6 +32,15 @@ class AggregationStrategy(str, Enum):
     FedProx = "FedProx"
     FedAdam = "FedAdam"
 
+    def to_domain(self) -> "DomainAggregationStrategy":
+        """Convert schema AggregationStrategy to domain AggregationStrategy."""
+        from app.utils.types import AggregationStrategy as DomainAggregationStrategy
+        mapping = {
+            AggregationStrategy.FedAvg: DomainAggregationStrategy.FEDAVG,
+            # Add mappings for FedProx and FedAdam when supported in domain
+        }
+        return mapping.get(self, DomainAggregationStrategy.FEDAVG)
+
 
 class ConfigurationSchema(BaseModel):
     """Shared configuration schema for both centralized and federated experiments"""
@@ -88,6 +97,20 @@ class CreateCentralizedExperimentRequest(BaseModel):
     name: str = Field(..., min_length=1, max_length=255, description="Experiment name")
     config: ConfigurationSchema = Field(..., description="Training configuration")
 
+    def to_domain_config(self) -> "DomainConfiguration":
+        """Convert request DTO to domain Configuration.
+
+        Returns:
+            Domain Configuration entity with centralized defaults.
+        """
+        from app.core.configuration import Configuration
+        return Configuration(
+            learning_rate=self.config.learning_rate,
+            n_factors=20,
+            regularization=0.02,
+            n_epochs=self.config.epochs,
+        )
+
 
 class CreateFederatedExperimentRequest(BaseModel):
     """Request to create a federated experiment"""
@@ -113,6 +136,24 @@ class CreateFederatedExperimentRequest(BaseModel):
     n_clients: int = Field(..., gt=0, description="Number of clients must be positive")
     n_rounds: int = Field(..., gt=0, description="Number of rounds must be positive")
     aggregation_strategy: AggregationStrategy = Field(..., description="Federated aggregation strategy")
+
+    def to_domain_config(self) -> "DomainConfiguration":
+        """Convert request DTO to domain Configuration.
+
+        Returns:
+            Domain Configuration entity with federated settings.
+        """
+        from app.core.configuration import Configuration
+        return Configuration(
+            learning_rate=self.config.learning_rate,
+            n_factors=20,
+            regularization=0.02,
+            n_epochs=self.config.epochs,
+            n_clients=self.n_clients,
+            n_rounds=self.n_rounds,
+            batch_size=self.config.batch_size,
+            aggregation_strategy=self.aggregation_strategy.to_domain(),
+        )
 
 
 class CompleteExperimentRequest(BaseModel):

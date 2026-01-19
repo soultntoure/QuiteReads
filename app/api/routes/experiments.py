@@ -4,7 +4,6 @@ Endpoints for managing centralized and federated learning experiments.
 """
 from typing import Annotated
 from fastapi import APIRouter, Depends, Query, status
-from app.core.configuration import Configuration
 from app.api.schemas.experiment_schemas import (
     CreateCentralizedExperimentRequest,
     CreateFederatedExperimentRequest,
@@ -16,7 +15,7 @@ from app.api.schemas.experiment_schemas import (
 )
 from app.api.dependencies import get_experiment_service
 from app.application.services import ExperimentService
-from app.utils.types import AggregationStrategy, ExperimentStatus as ExperimentStatusEnum
+from app.utils.types import ExperimentStatus as ExperimentStatusEnum
 
 router = APIRouter(prefix="/experiments", tags=["experiments"])
 
@@ -30,16 +29,9 @@ async def create_centralized_experiment(
     service: ExperimentServiceDep,
 ):
     """Create a new centralized experiment"""
-    config = Configuration(
-        learning_rate=request.config.learning_rate,
-        n_factors=20,
-        regularization=0.02,
-        n_epochs=request.config.epochs,
-    )
-
     experiment = await service.create_centralized_experiment(
         name=request.name,
-        config=config,
+        config=request.to_domain_config(),
     )
     return ExperimentResponse.from_domain(experiment)
 
@@ -50,25 +42,14 @@ async def create_federated_experiment(
     service: ExperimentServiceDep,
 ):
     """Create a new federated experiment"""
-    agg_strategy = AggregationStrategy.FEDAVG
-
-    config = Configuration(
-        learning_rate=request.config.learning_rate,
-        n_factors=20,
-        regularization=0.02,
-        n_epochs=request.config.epochs,
-        n_clients=request.n_clients,
-        n_rounds=request.n_rounds,
-        batch_size=request.config.batch_size,
-        aggregation_strategy=agg_strategy,
-    )
+    config = request.to_domain_config()
 
     experiment = await service.create_federated_experiment(
         name=request.name,
         config=config,
         n_clients=request.n_clients,
         n_rounds=request.n_rounds,
-        aggregation_strategy=agg_strategy,
+        aggregation_strategy=request.aggregation_strategy.to_domain(),
     )
     return ExperimentResponse.from_domain(experiment)
 
