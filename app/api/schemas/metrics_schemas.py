@@ -58,6 +58,7 @@ class AddMetricsBatchRequest(BaseModel):
 
 class MetricResponse(BaseModel):
     model_config = ConfigDict(
+        from_attributes=True,  # Allow validation from domain entities (dataclasses)
         json_schema_extra={
             "examples": [
                 {
