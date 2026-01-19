@@ -28,7 +28,7 @@ class TestExperimentSchemas:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "linear_regression"
+                "model_type": "matrix_factorization"
             }
         }
         from app.api.schemas.experiment_schemas import CreateCentralizedExperimentRequest
@@ -44,7 +44,7 @@ class TestExperimentSchemas:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 5,
-                "model_type": "linear_regression"
+                "model_type": "matrix_factorization"
             },
             "n_clients": 5,
             "n_rounds": 20,

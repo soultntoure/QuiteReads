@@ -41,7 +41,7 @@ class ConfigurationSchema(BaseModel):
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "linear_regression"
+                "model_type": "matrix_factorization"
             }
         }
 
@@ -54,12 +54,12 @@ class CreateCentralizedExperimentRequest(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "name": "Centralized Linear Regression Exp 1",
+                "name": "Centralized Matrix Factorization Exp 1",
                 "config": {
                     "learning_rate": 0.01,
                     "batch_size": 32,
                     "epochs": 10,
-                    "model_type": "linear_regression"
+                    "model_type": "matrix_factorization"
                 }
             }
         }
@@ -76,12 +76,12 @@ class CreateFederatedExperimentRequest(BaseModel):
     class Config:
         json_schema_extra = {
             "example": {
-                "name": "Federated Learning Exp 1",
+                "name": "Federated Matrix Factorization Exp 1",
                 "config": {
                     "learning_rate": 0.01,
                     "batch_size": 32,
                     "epochs": 5,
-                    "model_type": "linear_regression"
+                    "model_type": "matrix_factorization"
                 },
                 "n_clients": 5,
                 "n_rounds": 20,
@@ -143,14 +143,14 @@ class ExperimentResponse(BaseModel):
         json_schema_extra = {
             "example": {
                 "id": 1,
-                "name": "Centralized Linear Regression Exp 1",
+                "name": "Centralized Matrix Factorization Exp 1",
                 "type": "centralized",
                 "status": "completed",
                 "config": {
                     "learning_rate": 0.01,
                     "batch_size": 32,
                     "epochs": 10,
-                    "model_type": "linear_regression"
+                    "model_type": "matrix_factorization"
                 },
                 "metrics": {
                     "final_rmse": 0.45,
@@ -178,14 +178,14 @@ class ExperimentListResponse(BaseModel):
                 "experiments": [
                     {
                         "id": 1,
-                        "name": "Centralized Linear Regression Exp 1",
+                        "name": "Centralized Matrix Factorization Exp 1",
                         "type": "centralized",
                         "status": "completed",
                         "config": {
                             "learning_rate": 0.01,
                             "batch_size": 32,
                             "epochs": 10,
-                            "model_type": "linear_regression"
+                            "model_type": "matrix_factorization"
                         },
                         "metrics": {
                             "final_rmse": 0.45,
