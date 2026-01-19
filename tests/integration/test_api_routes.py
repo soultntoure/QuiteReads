@@ -95,7 +95,7 @@ class TestCreateCentralizedExperiment:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         }
 
@@ -108,7 +108,7 @@ class TestCreateCentralizedExperiment:
         assert data["status"] == "pending"
         assert "id" in data
         assert data["config"]["learning_rate"] == 0.01
-        assert data["config"]["n_epochs"] == 10
+        assert data["config"]["epochs"] == 10
 
     def test_create_centralized_invalid_learning_rate(self, client: TestClient):
         """Creating with invalid learning rate returns 422."""
@@ -118,7 +118,7 @@ class TestCreateCentralizedExperiment:
                 "learning_rate": 1.5,  # Invalid: > 1.0
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         }
 
@@ -133,7 +133,7 @@ class TestCreateCentralizedExperiment:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         }
 
@@ -152,11 +152,11 @@ class TestCreateFederatedExperiment:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 5,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             },
             "n_clients": 5,
             "n_rounds": 20,
-            "aggregation_strategy": "FedAvg"
+            "aggregation_strategy": "fedavg"
         }
 
         response = client.post("/experiments/federated", json=payload)
@@ -178,11 +178,11 @@ class TestCreateFederatedExperiment:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 5,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             },
             "n_clients": 1,  # Invalid: < 2
             "n_rounds": 20,
-            "aggregation_strategy": "FedAvg"
+            "aggregation_strategy": "fedavg"
         }
 
         response = client.post("/experiments/federated", json=payload)
@@ -196,11 +196,11 @@ class TestCreateFederatedExperiment:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 5,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             },
             "n_clients": 5,
             "n_rounds": 0,  # Invalid: < 1
-            "aggregation_strategy": "FedAvg"
+            "aggregation_strategy": "fedavg"
         }
 
         response = client.post("/experiments/federated", json=payload)
@@ -224,7 +224,7 @@ class TestGetExperiment:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         }
         create_response = client.post("/experiments/centralized", json=create_payload)
@@ -254,7 +254,7 @@ class TestListExperiments:
         assert response.status_code == 200
         data = response.json()
         assert data["experiments"] == []
-        assert data["total"] == 0
+        assert data["count"] == 0
 
     def test_list_multiple_experiments(self, client: TestClient):
         """List returns all experiments."""
@@ -265,7 +265,7 @@ class TestListExperiments:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         })
 
@@ -276,11 +276,11 @@ class TestListExperiments:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 5,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             },
             "n_clients": 5,
             "n_rounds": 20,
-            "aggregation_strategy": "FedAvg"
+            "aggregation_strategy": "fedavg"
         })
 
         # List all
@@ -288,7 +288,7 @@ class TestListExperiments:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["total"] == 2
+        assert data["count"] == 2
         assert len(data["experiments"]) == 2
 
     def test_filter_by_status(self, client: TestClient):
@@ -300,7 +300,7 @@ class TestListExperiments:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         })
         exp_id = create_response.json()["experiment_id"]
@@ -313,20 +313,20 @@ class TestListExperiments:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         })
 
         # Filter by running
         response = client.get("/experiments?status_filter=running")
         data = response.json()
-        assert data["total"] == 1
+        assert data["count"] == 1
         assert data["experiments"][0]["status"] == "running"
 
         # Filter by pending
         response = client.get("/experiments?status_filter=pending")
         data = response.json()
-        assert data["total"] == 1
+        assert data["count"] == 1
         assert data["experiments"][0]["status"] == "pending"
 
     def test_filter_by_type(self, client: TestClient):
@@ -338,7 +338,7 @@ class TestListExperiments:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         })
 
@@ -349,23 +349,23 @@ class TestListExperiments:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 5,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             },
             "n_clients": 5,
             "n_rounds": 20,
-            "aggregation_strategy": "FedAvg"
+            "aggregation_strategy": "fedavg"
         })
 
         # Filter by centralized
         response = client.get("/experiments?type_filter=centralized")
         data = response.json()
-        assert data["total"] == 1
+        assert data["count"] == 1
         assert data["experiments"][0]["experiment_type"] == "centralized"
 
         # Filter by federated
         response = client.get("/experiments?type_filter=federated")
         data = response.json()
-        assert data["total"] == 1
+        assert data["count"] == 1
         assert data["experiments"][0]["experiment_type"] == "federated"
 
 
@@ -386,7 +386,7 @@ class TestStartExperiment:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         })
         experiment_id = create_response.json()["experiment_id"]
@@ -412,7 +412,7 @@ class TestStartExperiment:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         })
         experiment_id = create_response.json()["experiment_id"]
@@ -435,7 +435,7 @@ class TestCompleteExperiment:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         })
         experiment_id = create_response.json()["experiment_id"]
@@ -475,7 +475,7 @@ class TestCompleteExperiment:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         })
         experiment_id = create_response.json()["experiment_id"]
@@ -502,7 +502,7 @@ class TestFailExperiment:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         })
         experiment_id = create_response.json()["experiment_id"]
@@ -538,7 +538,7 @@ class TestDeleteExperiment:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         })
         experiment_id = create_response.json()["experiment_id"]
@@ -574,7 +574,7 @@ class TestAddMetric:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         })
         experiment_id = create_response.json()["experiment_id"]
@@ -615,7 +615,7 @@ class TestAddMetricsBatch:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         })
         experiment_id = create_response.json()["experiment_id"]
@@ -657,7 +657,7 @@ class TestGetMetrics:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         })
         experiment_id = create_response.json()["experiment_id"]
@@ -668,7 +668,7 @@ class TestGetMetrics:
         assert response.status_code == 200
         data = response.json()
         assert data["metrics"] == []
-        assert data["total"] == 0
+        assert data["count"] == 0
 
     def test_get_metrics_with_data(self, client: TestClient):
         """Get metrics returns all metrics for experiment."""
@@ -679,7 +679,7 @@ class TestGetMetrics:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         })
         experiment_id = create_response.json()["experiment_id"]
@@ -697,7 +697,7 @@ class TestGetMetrics:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["total"] == 2
+        assert data["count"] == 2
         assert len(data["metrics"]) == 2
 
     def test_filter_metrics_by_name(self, client: TestClient):
@@ -709,7 +709,7 @@ class TestGetMetrics:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         })
         experiment_id = create_response.json()["experiment_id"]
@@ -727,7 +727,7 @@ class TestGetMetrics:
 
         assert response.status_code == 200
         data = response.json()
-        assert data["total"] == 2
+        assert data["count"] == 2
         assert all(m["name"] == "rmse" for m in data["metrics"])
 
 
@@ -743,7 +743,7 @@ class TestDeleteMetrics:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         })
         experiment_id = create_response.json()["experiment_id"]
@@ -786,7 +786,7 @@ class TestFullExperimentLifecycle:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             }
         })
         assert create_response.status_code == 201
@@ -835,11 +835,11 @@ class TestFullExperimentLifecycle:
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 3,
-                "model_type": "BIASED_SVD"
+                "model_type": "biased_svd"
             },
             "n_clients": 3,
             "n_rounds": 5,
-            "aggregation_strategy": "FedAvg"
+            "aggregation_strategy": "fedavg"
         })
         assert create_response.status_code == 201
         experiment_id = create_response.json()["experiment_id"]
