@@ -118,7 +118,7 @@ class ConfigurationSchema(BaseModel):
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
-                "model_type": "matrix_factorization"
+                "model_type": "biased_svd"
             }
         }
     )
@@ -156,7 +156,7 @@ class CreateCentralizedExperimentRequest(BaseModel):
                     "learning_rate": 0.01,
                     "batch_size": 32,
                     "epochs": 10,
-                    "model_type": "matrix_factorization"
+                    "model_type": "biased_svd"
                 }
             }
         }
@@ -190,7 +190,7 @@ class CreateFederatedExperimentRequest(BaseModel):
                     "learning_rate": 0.01,
                     "batch_size": 32,
                     "epochs": 5,
-                    "model_type": "matrix_factorization"
+                    "model_type": "biased_svd"
                 },
                 "n_clients": 5,
                 "n_rounds": 20,
@@ -290,7 +290,7 @@ class ExperimentResponse(BaseModel):
                     "learning_rate": 0.01,
                     "batch_size": 32,
                     "epochs": 10,
-                    "model_type": "matrix_factorization"
+                    "model_type": "biased_svd"
                 },
                 "metrics": {
                     "final_rmse": 0.45,
@@ -371,7 +371,7 @@ class ExperimentListResponse(BaseModel):
                             "learning_rate": 0.01,
                             "batch_size": 32,
                             "epochs": 10,
-                            "model_type": "matrix_factorization"
+                            "model_type": "biased_svd"
                         },
                         "metrics": {
                             "final_rmse": 0.45,
