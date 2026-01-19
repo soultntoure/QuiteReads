@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, ConfigDict, field_serializer
 from typing import Optional, List, TYPE_CHECKING
 from enum import Enum
 from datetime import datetime
-
+from app.utils.types import AggregationStrategy as DomainAggregationStrategy
 if TYPE_CHECKING:
     from app.core.experiments import Experiment
     from app.core.configuration import Configuration as DomainConfiguration
@@ -28,18 +28,35 @@ class ExperimentStatus(str, Enum):
 
 
 class AggregationStrategy(str, Enum):
+    """Supported federated aggregation strategies.
+    
+    Only strategies that are fully implemented in the domain layer should be listed here.
+    When adding new strategies, ensure they are also added to app.utils.types.AggregationStrategy
+    and the mapping in to_domain() below.
+    """
     FedAvg = "FedAvg"
-    FedProx = "FedProx"
-    FedAdam = "FedAdam"
 
     def to_domain(self) -> "DomainAggregationStrategy":
-        """Convert schema AggregationStrategy to domain AggregationStrategy."""
-        from app.utils.types import AggregationStrategy as DomainAggregationStrategy
+        """Convert schema AggregationStrategy to domain AggregationStrategy.
+        
+        Raises:
+            ValueError: If the strategy is not supported in the domain layer.
+        """
+        
+        
         mapping = {
             AggregationStrategy.FedAvg: DomainAggregationStrategy.FEDAVG,
-            # Add mappings for FedProx and FedAdam when supported in domain
         }
-        return mapping.get(self, DomainAggregationStrategy.FEDAVG)
+        
+        domain_strategy = mapping.get(self)
+        if domain_strategy is None:
+            supported = [s.value for s in mapping.keys()]
+            raise ValueError(
+                f"Aggregation strategy '{self.value}' is not yet supported. "
+                f"Supported strategies: {supported}"
+            )
+        
+        return domain_strategy
 
 
 class ConfigurationSchema(BaseModel):
