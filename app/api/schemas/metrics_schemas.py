@@ -3,31 +3,84 @@
 Pydantic models for performance metric data structures.
 """
 
-from pydantic import BaseModel, Field, field_serializer
+from pydantic import BaseModel, Field, ConfigDict, field_serializer
 from typing import Optional, List
 from datetime import datetime
 
 
 class AddMetricRequest(BaseModel):
-    name: str = Field(..., min_length=1)
-    value: float = Field(...)
-    round_number: Optional[int] = Field(None, ge=0)
-    client_id: Optional[int] = Field(None, ge=0)
-    timestamp: Optional[datetime] = Field(None)
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "name": "train_loss",
+                    "value": 0.342,
+                    "round_number": 5,
+                    "client_id": 2,
+                    "timestamp": "2025-12-19T10:30:45"
+                }
+            ]
+        }
+    )
+
+    name: str = Field(..., min_length=1, description="Metric name (e.g., 'train_loss', 'val_rmse')")
+    value: float = Field(..., description="Metric value")
+    round_number: Optional[int] = Field(None, ge=0, description="Training round number (federated only)")
+    client_id: Optional[int] = Field(None, ge=0, description="Client ID (federated only)")
+    timestamp: Optional[datetime] = Field(None, description="Timestamp when metric was recorded")
 
 
 class AddMetricsBatchRequest(BaseModel):
-    metrics: List[AddMetricRequest] = Field(..., min_length=1)
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "metrics": [
+                        {
+                            "name": "train_loss",
+                            "value": 0.342,
+                            "round_number": 5,
+                            "client_id": 1
+                        },
+                        {
+                            "name": "val_rmse",
+                            "value": 0.456,
+                            "round_number": 5,
+                            "client_id": 1
+                        }
+                    ]
+                }
+            ]
+        }
+    )
+
+    metrics: List[AddMetricRequest] = Field(..., min_length=1, description="List of metrics to add")
 
 
 class MetricResponse(BaseModel):
-    id: int
-    experiment_id: int
-    name: str
-    value: float
-    round_number: Optional[int] = None
-    client_id: Optional[int] = None
-    timestamp: datetime
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "id": 1,
+                    "experiment_id": 42,
+                    "name": "train_loss",
+                    "value": 0.342,
+                    "round_number": 5,
+                    "client_id": 2,
+                    "timestamp": "2025-12-19T10:30:45"
+                }
+            ]
+        }
+    )
+
+    id: int = Field(..., description="Metric record ID")
+    experiment_id: int = Field(..., description="Associated experiment ID")
+    name: str = Field(..., description="Metric name")
+    value: float = Field(..., description="Metric value")
+    round_number: Optional[int] = Field(None, description="Training round number (federated only)")
+    client_id: Optional[int] = Field(None, description="Client ID (federated only)")
+    timestamp: datetime = Field(..., description="Timestamp when metric was recorded")
 
     @field_serializer('timestamp')
     def serialize_datetime(self, dt: datetime, _info) -> str:
@@ -35,18 +88,64 @@ class MetricResponse(BaseModel):
 
 
 class MetricListResponse(BaseModel):
-    count: int
-    metrics: List[MetricResponse]
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "count": 2,
+                    "metrics": [
+                        {
+                            "id": 1,
+                            "experiment_id": 42,
+                            "name": "train_loss",
+                            "value": 0.342,
+                            "round_number": 5,
+                            "client_id": 2,
+                            "timestamp": "2025-12-19T10:30:45"
+                        },
+                        {
+                            "id": 2,
+                            "experiment_id": 42,
+                            "name": "val_rmse",
+                            "value": 0.456,
+                            "round_number": 5,
+                            "client_id": 2,
+                            "timestamp": "2025-12-19T10:31:00"
+                        }
+                    ]
+                }
+            ]
+        }
+    )
+
+    count: int = Field(..., description="Total number of metrics returned")
+    metrics: List[MetricResponse] = Field(..., description="List of metric records")
 
 
 class MetricStatisticsResponse(BaseModel):
-    metric_name: str
-    count: int
-    min_value: float
-    max_value: float
-    avg_value: float
-    latest_value: Optional[float] = None
-    latest_timestamp: Optional[datetime] = None
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "metric_name": "train_loss",
+                    "count": 100,
+                    "min_value": 0.221,
+                    "max_value": 0.876,
+                    "avg_value": 0.453,
+                    "latest_value": 0.342,
+                    "latest_timestamp": "2025-12-19T14:30:00"
+                }
+            ]
+        }
+    )
+
+    metric_name: str = Field(..., description="Name of the metric")
+    count: int = Field(..., description="Total number of records for this metric")
+    min_value: float = Field(..., description="Minimum value observed")
+    max_value: float = Field(..., description="Maximum value observed")
+    avg_value: float = Field(..., description="Average value across all records")
+    latest_value: Optional[float] = Field(None, description="Most recent metric value")
+    latest_timestamp: Optional[datetime] = Field(None, description="Timestamp of most recent metric")
 
     @field_serializer('latest_timestamp')
     def serialize_datetime(self, dt: Optional[datetime], _info) -> Optional[str]:
@@ -54,33 +153,120 @@ class MetricStatisticsResponse(BaseModel):
 
 
 class RoundConvergenceData(BaseModel):
-    round_number: int
-    avg_loss: float
-    min_loss: float
-    max_loss: float
-    num_clients_reported: int
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "round_number": 5,
+                    "avg_loss": 0.453,
+                    "min_loss": 0.321,
+                    "max_loss": 0.678,
+                    "num_clients_reported": 10
+                }
+            ]
+        }
+    )
+
+    round_number: int = Field(..., description="Federated learning round number")
+    avg_loss: float = Field(..., description="Average loss across all clients in this round")
+    min_loss: float = Field(..., description="Minimum loss observed in this round")
+    max_loss: float = Field(..., description="Maximum loss observed in this round")
+    num_clients_reported: int = Field(..., description="Number of clients that reported metrics for this round")
 
 
 class ConvergenceAnalysisResponse(BaseModel):
-    experiment_id: int
-    metric_name: str
-    total_rounds: int
-    rounds_data: List[RoundConvergenceData]
-    convergence_trend: str
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "experiment_id": 42,
+                    "metric_name": "train_loss",
+                    "total_rounds": 20,
+                    "rounds_data": [
+                        {
+                            "round_number": 1,
+                            "avg_loss": 0.876,
+                            "min_loss": 0.734,
+                            "max_loss": 1.023,
+                            "num_clients_reported": 10
+                        },
+                        {
+                            "round_number": 20,
+                            "avg_loss": 0.342,
+                            "min_loss": 0.298,
+                            "max_loss": 0.421,
+                            "num_clients_reported": 10
+                        }
+                    ],
+                    "convergence_trend": "decreasing"
+                }
+            ]
+        }
+    )
+
+    experiment_id: int = Field(..., description="Experiment ID")
+    metric_name: str = Field(..., description="Metric being analyzed")
+    total_rounds: int = Field(..., description="Total number of federated learning rounds")
+    rounds_data: List[RoundConvergenceData] = Field(..., description="Per-round convergence statistics")
+    convergence_trend: str = Field(..., description="Overall trend (e.g., 'decreasing', 'stable', 'increasing')")
 
 
 class ClientPerformanceData(BaseModel):
-    client_id: int
-    avg_metric_value: float
-    best_metric_value: float
-    latest_metric_value: Optional[float] = None
-    num_updates: int
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "client_id": 2,
+                    "avg_metric_value": 0.453,
+                    "best_metric_value": 0.321,
+                    "latest_metric_value": 0.342,
+                    "num_updates": 20
+                }
+            ]
+        }
+    )
+
+    client_id: int = Field(..., description="Unique client identifier")
+    avg_metric_value: float = Field(..., description="Average metric value across all rounds for this client")
+    best_metric_value: float = Field(..., description="Best (lowest) metric value achieved by this client")
+    latest_metric_value: Optional[float] = Field(None, description="Most recent metric value from this client")
+    num_updates: int = Field(..., description="Number of times this client reported metrics")
 
 
 class ClientComparisonResponse(BaseModel):
-    experiment_id: int
-    metric_name: str
-    total_clients: int
-    clients_data: List[ClientPerformanceData]
-    best_performing_client_id: Optional[int] = None
-    worst_performing_client_id: Optional[int] = None
+    model_config = ConfigDict(
+        json_schema_extra={
+            "examples": [
+                {
+                    "experiment_id": 42,
+                    "metric_name": "train_loss",
+                    "total_clients": 10,
+                    "clients_data": [
+                        {
+                            "client_id": 1,
+                            "avg_metric_value": 0.456,
+                            "best_metric_value": 0.321,
+                            "latest_metric_value": 0.342,
+                            "num_updates": 20
+                        },
+                        {
+                            "client_id": 2,
+                            "avg_metric_value": 0.412,
+                            "best_metric_value": 0.298,
+                            "latest_metric_value": 0.305,
+                            "num_updates": 20
+                        }
+                    ],
+                    "best_performing_client_id": 2,
+                    "worst_performing_client_id": 7
+                }
+            ]
+        }
+    )
+
+    experiment_id: int = Field(..., description="Experiment ID")
+    metric_name: str = Field(..., description="Metric being compared across clients")
+    total_clients: int = Field(..., description="Total number of clients in the experiment")
+    clients_data: List[ClientPerformanceData] = Field(..., description="Performance data for each client")
+    best_performing_client_id: Optional[int] = Field(None, description="ID of client with best (lowest) metric value")
+    worst_performing_client_id: Optional[int] = Field(None, description="ID of client with worst (highest) metric value")
