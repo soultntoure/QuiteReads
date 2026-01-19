@@ -3,10 +3,9 @@
 Pydantic models for performance metric data structures.
 """
 
-from datetime import datetime
 from typing import Optional, List
 
-from pydantic import BaseModel, Field, ConfigDict, field_serializer
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class AddMetricRequest(BaseModel):
@@ -119,9 +118,7 @@ class MetricStatisticsResponse(BaseModel):
                     "count": 100,
                     "min_value": 0.221,
                     "max_value": 0.876,
-                    "avg_value": 0.453,
-                    "latest_value": 0.342,
-                    "latest_timestamp": "2025-12-19T14:30:00"
+                    "avg_value": 0.453
                 }
             ]
         }
@@ -132,12 +129,6 @@ class MetricStatisticsResponse(BaseModel):
     min_value: float = Field(..., description="Minimum value observed")
     max_value: float = Field(..., description="Maximum value observed")
     avg_value: float = Field(..., description="Average value across all records")
-    latest_value: Optional[float] = Field(None, description="Most recent metric value")
-    latest_timestamp: Optional[datetime] = Field(None, description="Timestamp of most recent metric")
-
-    @field_serializer('latest_timestamp')
-    def serialize_datetime(self, dt: Optional[datetime], _info) -> Optional[str]:
-        return dt.isoformat() if dt else None
 
 
 class RoundConvergenceData(BaseModel):
