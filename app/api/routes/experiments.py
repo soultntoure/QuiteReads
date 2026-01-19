@@ -3,7 +3,7 @@
 Endpoints for managing centralized and federated learning experiments.
 """
 from typing import Annotated
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from app.api.schemas.experiment_schemas import (
     CreateCentralizedExperimentRequest,
     CreateFederatedExperimentRequest,
@@ -130,3 +130,5 @@ async def delete_experiment(
 ):
     """Delete an experiment"""
     await service.delete_experiment(experiment_id)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
