@@ -32,7 +32,7 @@ class ConfigurationSchema(BaseModel):
     """Shared configuration schema for both centralized and federated experiments"""
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {
+            "examples": {
                 "learning_rate": 0.01,
                 "batch_size": 32,
                 "epochs": 10,
@@ -51,7 +51,7 @@ class CreateCentralizedExperimentRequest(BaseModel):
     """Request to create a centralized experiment"""
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {
+            "examples": {
                 "name": "Centralized Matrix Factorization Exp 1",
                 "config": {
                     "learning_rate": 0.01,
@@ -71,7 +71,7 @@ class CreateFederatedExperimentRequest(BaseModel):
     """Request to create a federated experiment"""
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {
+            "examples": {
                 "name": "Federated Matrix Factorization Exp 1",
                 "config": {
                     "learning_rate": 0.01,
@@ -97,7 +97,7 @@ class CompleteExperimentRequest(BaseModel):
     """Request to mark experiment as completed with final metrics"""
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {
+            "examples": {
                 "final_rmse": 0.45,
                 "final_mae": 0.32,
                 "training_time_seconds": 3600.5
@@ -114,7 +114,7 @@ class ExperimentMetricsSchema(BaseModel):
     """Final metrics for experiment response"""
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {
+            "examples": {
                 "final_rmse": 0.45,
                 "final_mae": 0.32,
                 "training_time_seconds": 3600.5
@@ -131,7 +131,7 @@ class ExperimentResponse(BaseModel):
     """Unified response for both centralized and federated experiments"""
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {
+            "examples": {
                 "id": 1,
                 "name": "Centralized Matrix Factorization Exp 1",
                 "type": "centralized",
@@ -169,15 +169,16 @@ class ExperimentResponse(BaseModel):
     updated_at: datetime = Field(..., description="Timestamp when experiment was last updated")
 
     @field_serializer('created_at', 'updated_at')
-    def serialize_datetime(self, dt: datetime, _info):
-        return dt.isoformat()
+    def serialize_datetime(self, dt: datetime, _info) -> Optional[str]:
+        """Serialize datetime to ISO format"""
+        return dt.isoformat() if dt else None
 
 
 class ExperimentListResponse(BaseModel):
     """Wrapper for experiment list responses"""
     model_config = ConfigDict(
         json_schema_extra={
-            "example": {
+            "examples": {
                 "count": 2,
                 "experiments": [
                     {

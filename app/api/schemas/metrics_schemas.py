@@ -17,7 +17,7 @@ class AddMetricRequest(BaseModel):
 
 
 class AddMetricsBatchRequest(BaseModel):
-    metrics: List[AddMetricRequest] = Field(..., min_items=1)
+    metrics: List[AddMetricRequest] = Field(..., min_length=1)
 
 
 class MetricResponse(BaseModel):
@@ -30,7 +30,7 @@ class MetricResponse(BaseModel):
     timestamp: datetime
 
     @field_serializer('timestamp')
-    def serialize_datetime(self, dt: datetime, _info):
+    def serialize_datetime(self, dt: datetime, _info) -> str:
         return dt.isoformat()
 
 
@@ -49,7 +49,7 @@ class MetricStatisticsResponse(BaseModel):
     latest_timestamp: Optional[datetime] = None
 
     @field_serializer('latest_timestamp')
-    def serialize_datetime(self, dt: Optional[datetime], _info):
+    def serialize_datetime(self, dt: Optional[datetime], _info) -> Optional[str]:
         return dt.isoformat() if dt else None
 
 
