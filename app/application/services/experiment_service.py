@@ -3,7 +3,7 @@
 Business logic layer for managing experiment operations and lifecycle.
 """
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List
 from uuid import uuid4
 
@@ -61,7 +61,7 @@ class ExperimentService:
             name=name,
             config=config,
             status=ExperimentStatus.PENDING,
-            created_at=datetime.now(),
+            created_at=datetime.now(timezone.utc),
         )
 
         await self._experiment_repo.add(experiment)
@@ -99,7 +99,7 @@ class ExperimentService:
             n_rounds=n_rounds,
             aggregation_strategy=aggregation_strategy,
             status=ExperimentStatus.PENDING,
-            created_at=datetime.now(),
+            created_at=datetime.now(timezone.utc),
         )
 
         await self._experiment_repo.add(experiment)
