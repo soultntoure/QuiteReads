@@ -3,7 +3,7 @@
 Pydantic models for performance metric data structures.
 """
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_serializer
 from typing import Optional, List
 from datetime import datetime
 
@@ -29,8 +29,9 @@ class MetricResponse(BaseModel):
     client_id: Optional[int] = None
     timestamp: datetime
 
-    class Config:
-        json_encoders = {datetime: lambda v: v.isoformat()}
+    @field_serializer('timestamp')
+    def serialize_datetime(self, dt: datetime, _info):
+        return dt.isoformat()
 
 
 class MetricListResponse(BaseModel):
@@ -47,8 +48,9 @@ class MetricStatisticsResponse(BaseModel):
     latest_value: Optional[float] = None
     latest_timestamp: Optional[datetime] = None
 
-    class Config:
-        json_encoders = {datetime: lambda v: v.isoformat()}
+    @field_serializer('latest_timestamp')
+    def serialize_datetime(self, dt: Optional[datetime], _info):
+        return dt.isoformat() if dt else None
 
 
 class RoundConvergenceData(BaseModel):
