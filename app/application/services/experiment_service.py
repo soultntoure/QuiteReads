@@ -165,6 +165,28 @@ class ExperimentService:
             )
         return await self._experiment_repo.get_by_type(experiment_type)
 
+    async def get_experiments_by_status_and_type(
+        self, status: ExperimentStatus, experiment_type: str
+    ) -> List[Experiment]:
+        """
+        Retrieve experiments by both status and type.
+
+        Args:
+            status: Experiment status to filter by
+            experiment_type: "centralized" or "federated"
+
+        Returns:
+            List of experiments matching both filters
+
+        Raises:
+            ConfigurationError: If experiment_type is invalid
+        """
+        if experiment_type not in ["centralized", "federated"]:
+            raise ConfigurationError(
+                "experiment_type must be 'centralized' or 'federated'"
+            )
+        return await self._experiment_repo.get_by_status_and_type(status, experiment_type)
+
     async def start_experiment(self, experiment_id: str) -> Experiment:
         """
         Mark an experiment as running.

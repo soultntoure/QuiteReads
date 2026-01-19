@@ -127,6 +127,31 @@ class ExperimentRepository(BaseRepository[Experiment, str]):
 
         return [self._to_entity(model) for model in models]
 
+    async def get_by_status_and_type(
+        self, status: ExperimentStatus, experiment_type: str
+    ) -> List[Experiment]:
+        """Retrieve experiments by both status and type.
+
+        Args:
+            status: Experiment status to filter by.
+            experiment_type: 'centralized' or 'federated'.
+
+        Returns:
+            List of experiments matching both filters.
+        """
+        stmt = (
+            select(ExperimentModel)
+            .where(
+                ExperimentModel.status == status,
+                ExperimentModel.experiment_type == experiment_type,
+            )
+            .order_by(ExperimentModel.created_at.desc())
+        )
+        result = await self._session.execute(stmt)
+        models = result.scalars().all()
+
+        return [self._to_entity(model) for model in models]
+
     async def update(self, entity: Experiment) -> Experiment:
         """Update an existing experiment.
 

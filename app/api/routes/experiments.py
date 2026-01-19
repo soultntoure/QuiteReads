@@ -61,8 +61,9 @@ async def list_experiments(
 ):
     """List all experiments with optional filters"""
     if status_filter and type_filter:
-        by_status = await service.get_experiments_by_status(status_filter.to_domain())
-        experiments = [e for e in by_status if e.experiment_type == type_filter.to_domain_value()]
+        experiments = await service.get_experiments_by_status_and_type(
+            status_filter.to_domain(), type_filter.to_domain_value()
+        )
     elif status_filter:
         experiments = await service.get_experiments_by_status(status_filter.to_domain())
     elif type_filter:
@@ -74,6 +75,7 @@ async def list_experiments(
         count=len(experiments),
         experiments=[ExperimentResponse.from_domain(e) for e in experiments]
     )
+
 
 
 @router.get("/{experiment_id}", response_model=ExperimentResponse)
