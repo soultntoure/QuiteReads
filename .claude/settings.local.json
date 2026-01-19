@@ -25,7 +25,10 @@
       "mcp__obsidian__write_file",
       "mcp__obsidian__get_file_info",
       "Bash(ls:*)",
-      "Bash(uv run pytest:*)"
+      "Bash(uv run pytest:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__query-docs",
+      "mcp__perplexity__search"
     ],
     "deny": [],
     "ask": []

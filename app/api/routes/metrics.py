@@ -4,7 +4,7 @@ Endpoints for recording and retrieving experiment performance metrics.
 """
 
 from typing import Annotated, Optional
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from app.api.schemas.metrics_schemas import (
     AddMetricRequest,
     AddMetricsBatchRequest,
@@ -93,7 +93,7 @@ async def list_metrics(
         metrics=[MetricResponse.model_validate(m) for m in metrics]
     )
 
-@router.delete("/{experiment_id}/metrics", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/{experiment_id}/metrics", status_code=status.HTTP_204_NO_CONTENT, response_class=Response)
 async def delete_experiment_metrics(
     experiment_id: str,
     service: MetricsServiceDep,
