@@ -54,7 +54,7 @@ async def create_federated_experiment(
     return ExperimentResponse.from_domain(experiment)
 
 
-@router.get("", response_model=ExperimentListResponse)
+@router.get("/", response_model=ExperimentListResponse)
 async def list_experiments(
     service: ExperimentServiceDep,
     status_filter: ExperimentStatus = Query(None, description="Filter by status"),
