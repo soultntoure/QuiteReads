@@ -57,8 +57,8 @@ async def create_federated_experiment(
 @router.get("/", response_model=ExperimentListResponse)
 async def list_experiments(
     service: ExperimentServiceDep,
-    status_filter: ExperimentStatus = Query(None, description="Filter by status"),
-    type_filter: ExperimentType = Query(None, description="Filter by type"),
+    status_filter: ExperimentStatus | None = Query(default=None, description="Filter by status"),
+    type_filter: ExperimentType | None = Query(default=None, description="Filter by type"),
 ):
     """List all experiments with optional filters"""
     if status_filter and type_filter:
