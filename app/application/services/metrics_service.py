@@ -204,7 +204,7 @@ class MetricsService:
 
     async def get_metric_statistics(
         self, experiment_id: str, metric_name: str
-    ) -> Dict[str, float]:
+    ) -> Dict[str, float | int]:
         """
         Calculate aggregate statistics for a specific metric.
 
