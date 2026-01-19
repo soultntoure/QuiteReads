@@ -4,7 +4,7 @@ Endpoints for recording and retrieving experiment performance metrics.
 """
 
 from typing import Annotated, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, Query, status
 from app.api.schemas.metrics_schemas import (
     AddMetricRequest,
     AddMetricsBatchRequest,
@@ -14,7 +14,6 @@ from app.api.schemas.metrics_schemas import (
 from app.api.dependencies import get_metrics_service
 from app.application.services import MetricsService
 from app.core.metrics import PerformanceMetric
-from app.utils.exceptions import EntityNotFoundError
 
 router = APIRouter(prefix="/experiments", tags=["metrics"])
 
@@ -28,17 +27,14 @@ async def add_metric(
     service: MetricsServiceDep,
 ):
     """Add a single performance metric to an experiment."""
-    try:
-        metric = await service.add_metric(
-            experiment_id=experiment_id,
-            name=request.name,
-            value=request.value,
-            round_number=request.round_number,
-            client_id=request.client_id,
-        )
-        return MetricResponse.model_validate(metric)
-    except EntityNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    metric = await service.add_metric(
+        experiment_id=experiment_id,
+        name=request.name,
+        value=request.value,
+        round_number=request.round_number,
+        client_id=request.client_id,
+    )
+    return MetricResponse.model_validate(metric)
 
 @router.post("/{experiment_id}/metrics/batch", response_model=list[MetricResponse], status_code=status.HTTP_201_CREATED)
 async def add_metrics_batch(
@@ -47,21 +43,18 @@ async def add_metrics_batch(
     service: MetricsServiceDep,
 ):
     """Add multiple performance metrics to an experiment in a batch."""
-    try:
-        metrics_list = [
-            PerformanceMetric(
-                name=m.name,
-                value=m.value,
-                experiment_id=experiment_id,
-                round_number=m.round_number,
-                client_id=m.client_id,
-            )
-            for m in request.metrics
-        ]
-        result = await service.add_metrics_batch(experiment_id, metrics_list)
-        return [MetricResponse.model_validate(m) for m in result]
-    except EntityNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    metrics_list = [
+        PerformanceMetric(
+            name=m.name,
+            value=m.value,
+            experiment_id=experiment_id,
+            round_number=m.round_number,
+            client_id=m.client_id,
+        )
+        for m in request.metrics
+    ]
+    result = await service.add_metrics_batch(experiment_id, metrics_list)
+    return [MetricResponse.model_validate(m) for m in result]
 
 @router.get("/{experiment_id}/metrics", response_model=MetricListResponse)
 async def list_metrics(
@@ -72,36 +65,33 @@ async def list_metrics(
     round_number: Optional[int] = Query(None, ge=0, description="Filter by round number (federated only)"),
 ):
     """List metrics for an experiment with optional filters."""
-    try:
-        # Apply filters in order of specificity
-        if client_id and round_number is not None:
-            # Get all metrics, then filter manually for both client and round
-            all_metrics = await service.get_experiment_metrics(experiment_id)
-            metrics = [
-                m for m in all_metrics
-                if m.client_id == client_id and m.round_number == round_number
-            ]
-            if name:
-                metrics = [m for m in metrics if m.name == name]
-        elif client_id:
-            metrics = await service.get_client_metrics(experiment_id, client_id)
-            if name:
-                metrics = [m for m in metrics if m.name == name]
-        elif round_number is not None:
-            metrics = await service.get_round_metrics(experiment_id, round_number)
-            if name:
-                metrics = [m for m in metrics if m.name == name]
-        elif name:
-            metrics = await service.get_metrics_by_name(experiment_id, name)
-        else:
-            metrics = await service.get_experiment_metrics(experiment_id)
+    # Apply filters in order of specificity
+    if client_id and round_number is not None:
+        # Get all metrics, then filter manually for both client and round
+        all_metrics = await service.get_experiment_metrics(experiment_id)
+        metrics = [
+            m for m in all_metrics
+            if m.client_id == client_id and m.round_number == round_number
+        ]
+        if name:
+            metrics = [m for m in metrics if m.name == name]
+    elif client_id:
+        metrics = await service.get_client_metrics(experiment_id, client_id)
+        if name:
+            metrics = [m for m in metrics if m.name == name]
+    elif round_number is not None:
+        metrics = await service.get_round_metrics(experiment_id, round_number)
+        if name:
+            metrics = [m for m in metrics if m.name == name]
+    elif name:
+        metrics = await service.get_metrics_by_name(experiment_id, name)
+    else:
+        metrics = await service.get_experiment_metrics(experiment_id)
 
-        return MetricListResponse(
-            count=len(metrics),
-            metrics=[MetricResponse.model_validate(m) for m in metrics]
-        )
-    except EntityNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    return MetricListResponse(
+        count=len(metrics),
+        metrics=[MetricResponse.model_validate(m) for m in metrics]
+    )
 
 @router.delete("/{experiment_id}/metrics", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_experiment_metrics(
@@ -109,7 +99,4 @@ async def delete_experiment_metrics(
     service: MetricsServiceDep,
 ):
     """Delete all metrics for an experiment."""
-    try:
-        await service.delete_experiment_metrics(experiment_id)
-    except EntityNotFoundError as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    await service.delete_experiment_metrics(experiment_id)
