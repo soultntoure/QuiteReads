@@ -19,12 +19,36 @@ class ExperimentType(str, Enum):
     CENTRALIZED = "centralized"
     FEDERATED = "federated"
 
+    def to_domain_value(self) -> str:
+        """Convert API ExperimentType to domain experiment_type string.
+
+        Returns:
+            String value for domain experiment_type field.
+        """
+        return self.value
+
 
 class ExperimentStatus(str, Enum):
     PENDING = "pending"
     RUNNING = "running"
     COMPLETED = "completed"
     FAILED = "failed"
+
+    def to_domain(self) -> "DomainExperimentStatus":
+        """Convert API ExperimentStatus to domain ExperimentStatus.
+
+        Returns:
+            Domain ExperimentStatus enum value.
+        """
+        from app.utils.types import ExperimentStatus as DomainStatus
+
+        mapping = {
+            ExperimentStatus.PENDING: DomainStatus.PENDING,
+            ExperimentStatus.RUNNING: DomainStatus.RUNNING,
+            ExperimentStatus.COMPLETED: DomainStatus.COMPLETED,
+            ExperimentStatus.FAILED: DomainStatus.FAILED,
+        }
+        return mapping[self]
 
 
 class AggregationStrategy(str, Enum):

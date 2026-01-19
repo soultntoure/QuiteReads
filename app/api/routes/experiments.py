@@ -15,7 +15,6 @@ from app.api.schemas.experiment_schemas import (
 )
 from app.api.dependencies import get_experiment_service
 from app.application.services import ExperimentService
-from app.utils.types import ExperimentStatus as ExperimentStatusEnum
 
 router = APIRouter(prefix="/experiments", tags=["experiments"])
 
@@ -62,12 +61,12 @@ async def list_experiments(
 ):
     """List all experiments with optional filters"""
     if status_filter and type_filter:
-        by_status = await service.get_experiments_by_status(ExperimentStatusEnum[status_filter.value.upper()])
-        experiments = [e for e in by_status if e.experiment_type == type_filter.value]
+        by_status = await service.get_experiments_by_status(status_filter.to_domain())
+        experiments = [e for e in by_status if e.experiment_type == type_filter.to_domain_value()]
     elif status_filter:
-        experiments = await service.get_experiments_by_status(ExperimentStatusEnum[status_filter.value.upper()])
+        experiments = await service.get_experiments_by_status(status_filter.to_domain())
     elif type_filter:
-        experiments = await service.get_experiments_by_type(type_filter.value)
+        experiments = await service.get_experiments_by_type(type_filter.to_domain_value())
     else:
         experiments = await service.get_all_experiments()
 
