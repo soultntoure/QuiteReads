@@ -43,7 +43,7 @@ async def create_centralized_experiment(
             name=request.name,
             config=config,
         )
-        return ExperimentResponse.from_orm(experiment)
+        return ExperimentResponse.model_validate(experiment)
     except ConfigurationError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
@@ -77,7 +77,7 @@ async def create_federated_experiment(
             n_rounds=request.n_rounds,
             aggregation_strategy=agg_strategy,
         )
-        return ExperimentResponse.from_orm(experiment)
+        return ExperimentResponse.model_validate(experiment)
     except ConfigurationError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
 
@@ -104,7 +104,7 @@ async def list_experiments(
         
         return ExperimentListResponse(
             count=len(experiments),
-            experiments=[ExperimentResponse.from_orm(e) for e in experiments]
+            experiments=[ExperimentResponse.model_validate(e) for e in experiments]
         )
     except ConfigurationError as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
@@ -119,7 +119,7 @@ async def get_experiment(
     try:
         service = await get_experiment_service(db)
         experiment = await service.get_experiment_by_id(experiment_id)
-        return ExperimentResponse.from_orm(experiment)
+        return experiment_to_dict(experiment)
     except EntityNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -133,7 +133,7 @@ async def start_experiment(
     try:
         service = await get_experiment_service(db)
         experiment = await service.start_experiment(experiment_id)
-        return ExperimentResponse.from_orm(experiment)
+        return experiment_to_dict(experiment)
     except EntityNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except ConfigurationError as e:
@@ -155,7 +155,7 @@ async def complete_experiment(
             final_mae=request.final_mae,
             training_time_seconds=request.training_time_seconds,
         )
-        return ExperimentResponse.from_orm(experiment)
+        return experiment_to_dict(experiment)
     except EntityNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except ConfigurationError as e:
@@ -171,7 +171,7 @@ async def fail_experiment(
     try:
         service = await get_experiment_service(db)
         experiment = await service.fail_experiment(experiment_id)
-        return ExperimentResponse.from_orm(experiment)
+        return experiment_to_dict(experiment)
     except EntityNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except ConfigurationError as e:

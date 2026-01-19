@@ -34,7 +34,7 @@ async def add_metric(
             round_number=request.round_number,
             client_id=request.client_id,
         )
-        return MetricResponse.from_orm(metric)
+        return MetricResponse.model_validate(metric)
     except EntityNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -57,7 +57,7 @@ async def add_metrics_batch(
             for m in request.metrics
         ]
         result = await service.add_metrics_batch(experiment_id, metrics_list)
-        return [MetricResponse.from_orm(m) for m in result]
+        return [MetricResponse.model_validate(m) for m in result]
     except EntityNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
@@ -75,7 +75,7 @@ async def list_metrics(
             metrics = await service.get_metrics_by_name(experiment_id, name)
         else:
             metrics = await service.get_experiment_metrics(experiment_id)
-        return MetricListResponse(count=len(metrics), metrics=[MetricResponse.from_orm(m) for m in metrics])
+        return MetricListResponse(count=len(metrics), metrics=[MetricResponse.model_validate(m) for m in metrics])
     except EntityNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
