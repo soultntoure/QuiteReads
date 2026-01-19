@@ -128,6 +128,25 @@ class ConfigurationSchema(BaseModel):
     epochs: int = Field(..., gt=0, description="Number of epochs must be positive")
     model_type: str = Field(..., min_length=1, description="Type of model to train")
 
+    def to_domain_model_type(self) -> "ModelType":
+        """Convert model_type string to domain ModelType enum.
+
+        Returns:
+            Domain ModelType enum value.
+
+        Raises:
+            ValueError: If model_type is not a valid ModelType.
+        """
+        from app.utils.types import ModelType
+        try:
+            return ModelType(self.model_type)
+        except ValueError:
+            valid_types = [mt.value for mt in ModelType]
+            raise ValueError(
+                f"Invalid model_type '{self.model_type}'. "
+                f"Supported types: {valid_types}"
+            )
+
     @classmethod
     def from_domain(cls, config: "DomainConfiguration") -> "ConfigurationSchema":
         """Convert domain Configuration to schema.
@@ -177,6 +196,8 @@ class CreateCentralizedExperimentRequest(BaseModel):
             n_factors=20,
             regularization=0.02,
             n_epochs=self.config.epochs,
+            batch_size=self.config.batch_size,
+            model_type=self.config.to_domain_model_type(),
         )
 
 
@@ -220,6 +241,7 @@ class CreateFederatedExperimentRequest(BaseModel):
             n_clients=self.n_clients,
             n_rounds=self.n_rounds,
             batch_size=self.config.batch_size,
+            model_type=self.config.to_domain_model_type(),
             aggregation_strategy=self.aggregation_strategy.to_domain(),
         )
 
