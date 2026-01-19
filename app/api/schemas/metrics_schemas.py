@@ -73,17 +73,17 @@ class MetricResponse(BaseModel):
         }
     )
 
-    id: int = Field(..., gt=0, description="Metric record ID")
+    id: Optional[int] = Field(None, gt=0, description="Metric record ID")
     experiment_id: str = Field(..., description="Associated experiment ID (UUID)")
     name: str = Field(..., description="Metric name")
     value: float = Field(..., description="Metric value")
     round_number: Optional[int] = Field(None, description="Training round number (federated only)")
     client_id: Optional[str] = Field(None, description="Client ID (federated only)")
-    timestamp: datetime = Field(..., description="Timestamp when metric was recorded")
+    timestamp: Optional[datetime] = Field(None, description="Timestamp when metric was recorded")
 
     @field_serializer('timestamp')
-    def serialize_datetime(self, dt: datetime, _info) -> str:
-        return dt.isoformat()
+    def serialize_datetime(self, dt: Optional[datetime], _info) -> Optional[str]:
+        return dt.isoformat() if dt else None
 
 
 class MetricListResponse(BaseModel):
