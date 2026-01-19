@@ -81,6 +81,33 @@ class AggregationStrategy(str, Enum):
             )
         
         return domain_strategy
+    
+    @classmethod
+    def from_domain(cls, domain_strategy: "DomainAggregationStrategy") -> "AggregationStrategy":
+        """Convert domain AggregationStrategy to API AggregationStrategy.
+        
+        Args:
+            domain_strategy: Domain AggregationStrategy enum value
+        
+        Returns:
+            API AggregationStrategy enum value
+        
+        Raises:
+            ValueError: If the domain strategy is not supported in the API layer.
+        """
+        mapping = {
+            DomainAggregationStrategy.FEDAVG: cls.FEDAVG,
+        }
+        
+        api_strategy = mapping.get(domain_strategy)
+        if api_strategy is None:
+            supported = [s.name for s in mapping.keys()]
+            raise ValueError(
+                f"Domain aggregation strategy '{domain_strategy.name}' is not yet supported in API. "
+                f"Supported strategies: {supported}"
+            )
+        
+        return api_strategy
 
 
 class ConfigurationSchema(BaseModel):
@@ -319,7 +346,7 @@ class ExperimentResponse(BaseModel):
             n_clients=experiment.n_clients if isinstance(experiment, FederatedExperiment) else None,
             n_rounds=experiment.n_rounds if isinstance(experiment, FederatedExperiment) else None,
             aggregation_strategy=(
-                AggregationStrategy(experiment.aggregation_strategy.value)
+                AggregationStrategy.from_domain(experiment.aggregation_strategy)
                 if isinstance(experiment, FederatedExperiment)
                 else None
             ),
