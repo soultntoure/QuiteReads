@@ -164,11 +164,11 @@ class TestCreateFederatedExperiment:
         assert response.status_code == 201
         data = response.json()
         assert data["name"] == "Test Federated FL"
-        assert data["experiment_type"] == "federated"
+        assert data["type"] == "federated"
         assert data["status"] == "pending"
         assert data["n_clients"] == 5
         assert data["n_rounds"] == 20
-        assert data["aggregation_strategy"] == "FedAvg"
+        assert data["aggregation_strategy"] == "fedavg"
 
     def test_create_federated_invalid_n_clients(self, client: TestClient):
         """Creating with invalid n_clients returns 422."""
@@ -228,14 +228,14 @@ class TestGetExperiment:
             }
         }
         create_response = client.post("/experiments/centralized", json=create_payload)
-        experiment_id = create_response.json()["experiment_id"]
+        experiment_id = create_response.json()["id"]
 
         # Retrieve it
         response = client.get(f"/experiments/{experiment_id}")
 
         assert response.status_code == 200
         data = response.json()
-        assert data["experiment_id"] == experiment_id
+        assert data["id"] == experiment_id
         assert data["name"] == "Test Get"
 
     def test_get_nonexistent_experiment(self, client: TestClient):
@@ -303,7 +303,7 @@ class TestListExperiments:
                 "model_type": "biased_svd"
             }
         })
-        exp_id = create_response.json()["experiment_id"]
+        exp_id = create_response.json()["id"]
         client.post(f"/experiments/{exp_id}/start")
 
         # Create another pending experiment
@@ -360,13 +360,13 @@ class TestListExperiments:
         response = client.get("/experiments?type_filter=centralized")
         data = response.json()
         assert data["count"] == 1
-        assert data["experiments"][0]["experiment_type"] == "centralized"
+        assert data["experiments"][0]["type"] == "centralized"
 
         # Filter by federated
         response = client.get("/experiments?type_filter=federated")
         data = response.json()
         assert data["count"] == 1
-        assert data["experiments"][0]["experiment_type"] == "federated"
+        assert data["experiments"][0]["type"] == "federated"
 
 
 # -----------------------------------------------------------------------------
@@ -389,7 +389,7 @@ class TestStartExperiment:
                 "model_type": "biased_svd"
             }
         })
-        experiment_id = create_response.json()["experiment_id"]
+        experiment_id = create_response.json()["id"]
 
         # Start it
         response = client.post(f"/experiments/{experiment_id}/start")
@@ -415,7 +415,7 @@ class TestStartExperiment:
                 "model_type": "biased_svd"
             }
         })
-        experiment_id = create_response.json()["experiment_id"]
+        experiment_id = create_response.json()["id"]
         client.post(f"/experiments/{experiment_id}/start")
 
         # Try to start again
@@ -438,7 +438,7 @@ class TestCompleteExperiment:
                 "model_type": "biased_svd"
             }
         })
-        experiment_id = create_response.json()["experiment_id"]
+        experiment_id = create_response.json()["id"]
         client.post(f"/experiments/{experiment_id}/start")
 
         # Complete it with metrics
@@ -478,7 +478,7 @@ class TestCompleteExperiment:
                 "model_type": "biased_svd"
             }
         })
-        experiment_id = create_response.json()["experiment_id"]
+        experiment_id = create_response.json()["id"]
 
         # Try to complete
         complete_payload = {
@@ -505,7 +505,7 @@ class TestFailExperiment:
                 "model_type": "biased_svd"
             }
         })
-        experiment_id = create_response.json()["experiment_id"]
+        experiment_id = create_response.json()["id"]
         client.post(f"/experiments/{experiment_id}/start")
 
         # Fail it
@@ -541,7 +541,7 @@ class TestDeleteExperiment:
                 "model_type": "biased_svd"
             }
         })
-        experiment_id = create_response.json()["experiment_id"]
+        experiment_id = create_response.json()["id"]
 
         # Delete it
         response = client.delete(f"/experiments/{experiment_id}")
@@ -577,7 +577,7 @@ class TestAddMetric:
                 "model_type": "biased_svd"
             }
         })
-        experiment_id = create_response.json()["experiment_id"]
+        experiment_id = create_response.json()["id"]
 
         # Add metric
         metric_payload = {
@@ -618,7 +618,7 @@ class TestAddMetricsBatch:
                 "model_type": "biased_svd"
             }
         })
-        experiment_id = create_response.json()["experiment_id"]
+        experiment_id = create_response.json()["id"]
 
         # Add batch metrics
         batch_payload = {
@@ -660,7 +660,7 @@ class TestGetMetrics:
                 "model_type": "biased_svd"
             }
         })
-        experiment_id = create_response.json()["experiment_id"]
+        experiment_id = create_response.json()["id"]
 
         # Get metrics
         response = client.get(f"/experiments/{experiment_id}/metrics")
@@ -682,7 +682,7 @@ class TestGetMetrics:
                 "model_type": "biased_svd"
             }
         })
-        experiment_id = create_response.json()["experiment_id"]
+        experiment_id = create_response.json()["id"]
 
         # Add metrics
         client.post(f"/experiments/{experiment_id}/metrics/batch", json={
@@ -712,7 +712,7 @@ class TestGetMetrics:
                 "model_type": "biased_svd"
             }
         })
-        experiment_id = create_response.json()["experiment_id"]
+        experiment_id = create_response.json()["id"]
 
         client.post(f"/experiments/{experiment_id}/metrics/batch", json={
             "metrics": [
@@ -746,7 +746,7 @@ class TestDeleteMetrics:
                 "model_type": "biased_svd"
             }
         })
-        experiment_id = create_response.json()["experiment_id"]
+        experiment_id = create_response.json()["id"]
 
         client.post(f"/experiments/{experiment_id}/metrics/batch", json={
             "metrics": [
@@ -790,7 +790,7 @@ class TestFullExperimentLifecycle:
             }
         })
         assert create_response.status_code == 201
-        experiment_id = create_response.json()["experiment_id"]
+        experiment_id = create_response.json()["id"]
         assert create_response.json()["status"] == "pending"
 
         # 2. Start experiment
@@ -842,7 +842,7 @@ class TestFullExperimentLifecycle:
             "aggregation_strategy": "fedavg"
         })
         assert create_response.status_code == 201
-        experiment_id = create_response.json()["experiment_id"]
+        experiment_id = create_response.json()["id"]
 
         # 2. Start experiment
         client.post(f"/experiments/{experiment_id}/start")
