@@ -16,7 +16,7 @@ class AddMetricRequest(BaseModel):
                     "name": "train_loss",
                     "value": 0.342,
                     "round_number": 5,
-                    "client_id": 2,
+                    "client_id": "client_2",
                     "timestamp": "2025-12-19T10:30:45"
                 }
             ]
@@ -26,7 +26,7 @@ class AddMetricRequest(BaseModel):
     name: str = Field(..., min_length=1, description="Metric name (e.g., 'train_loss', 'val_rmse')")
     value: float = Field(..., description="Metric value")
     round_number: Optional[int] = Field(None, ge=0, description="Training round number (federated only)")
-    client_id: Optional[int] = Field(None, ge=0, description="Client ID (federated only)")
+    client_id: Optional[str] = Field(None, description="Client ID (federated only)")
     timestamp: Optional[datetime] = Field(None, description="Timestamp when metric was recorded")
 
 
@@ -40,13 +40,13 @@ class AddMetricsBatchRequest(BaseModel):
                             "name": "train_loss",
                             "value": 0.342,
                             "round_number": 5,
-                            "client_id": 1
+                            "client_id": "client_1"
                         },
                         {
                             "name": "val_rmse",
                             "value": 0.456,
                             "round_number": 5,
-                            "client_id": 1
+                            "client_id": "client_1"
                         }
                     ]
                 }
@@ -63,11 +63,11 @@ class MetricResponse(BaseModel):
             "examples": [
                 {
                     "id": 1,
-                    "experiment_id": 42,
+                    "experiment_id": "550e8400-e29b-41d4-a716-446655440000",
                     "name": "train_loss",
                     "value": 0.342,
                     "round_number": 5,
-                    "client_id": 2,
+                    "client_id": "client_2",
                     "timestamp": "2025-12-19T10:30:45"
                 }
             ]
@@ -75,11 +75,11 @@ class MetricResponse(BaseModel):
     )
 
     id: int = Field(..., gt=0, description="Metric record ID")
-    experiment_id: int = Field(..., gt=0, description="Associated experiment ID")
+    experiment_id: str = Field(..., description="Associated experiment ID (UUID)")
     name: str = Field(..., description="Metric name")
     value: float = Field(..., description="Metric value")
     round_number: Optional[int] = Field(None, description="Training round number (federated only)")
-    client_id: Optional[int] = Field(None, description="Client ID (federated only)")
+    client_id: Optional[str] = Field(None, description="Client ID (federated only)")
     timestamp: datetime = Field(..., description="Timestamp when metric was recorded")
 
     @field_serializer('timestamp')
@@ -96,20 +96,20 @@ class MetricListResponse(BaseModel):
                     "metrics": [
                         {
                             "id": 1,
-                            "experiment_id": 42,
+                            "experiment_id": "550e8400-e29b-41d4-a716-446655440000",
                             "name": "train_loss",
                             "value": 0.342,
                             "round_number": 5,
-                            "client_id": 2,
+                            "client_id": "client_2",
                             "timestamp": "2025-12-19T10:30:45"
                         },
                         {
                             "id": 2,
-                            "experiment_id": 42,
+                            "experiment_id": "550e8400-e29b-41d4-a716-446655440000",
                             "name": "val_rmse",
                             "value": 0.456,
                             "round_number": 5,
-                            "client_id": 2,
+                            "client_id": "client_2",
                             "timestamp": "2025-12-19T10:31:00"
                         }
                     ]
@@ -179,7 +179,7 @@ class ConvergenceAnalysisResponse(BaseModel):
         json_schema_extra={
             "examples": [
                 {
-                    "experiment_id": 42,
+                    "experiment_id": "550e8400-e29b-41d4-a716-446655440000",
                     "metric_name": "train_loss",
                     "total_rounds": 20,
                     "rounds_data": [
@@ -204,7 +204,7 @@ class ConvergenceAnalysisResponse(BaseModel):
         }
     )
 
-    experiment_id: int = Field(..., gt=0, description="Experiment ID")
+    experiment_id: str = Field(..., description="Experiment ID (UUID)")
     metric_name: str = Field(..., description="Metric being analyzed")
     total_rounds: int = Field(..., ge=0, description="Total number of federated learning rounds")
     rounds_data: List[RoundConvergenceData] = Field(..., description="Per-round convergence statistics")
@@ -216,7 +216,7 @@ class ClientPerformanceData(BaseModel):
         json_schema_extra={
             "examples": [
                 {
-                    "client_id": 2,
+                    "client_id": "client_2",
                     "avg_metric_value": 0.453,
                     "best_metric_value": 0.321,
                     "latest_metric_value": 0.342,
@@ -226,7 +226,7 @@ class ClientPerformanceData(BaseModel):
         }
     )
 
-    client_id: int = Field(..., ge=0, description="Unique client identifier")
+    client_id: str = Field(..., description="Unique client identifier")
     avg_metric_value: float = Field(..., description="Average metric value across all rounds for this client")
     best_metric_value: float = Field(..., description="Best (lowest) metric value achieved by this client")
     latest_metric_value: Optional[float] = Field(None, description="Most recent metric value from this client")
@@ -238,35 +238,35 @@ class ClientComparisonResponse(BaseModel):
         json_schema_extra={
             "examples": [
                 {
-                    "experiment_id": 42,
+                    "experiment_id": "550e8400-e29b-41d4-a716-446655440000",
                     "metric_name": "train_loss",
                     "total_clients": 10,
                     "clients_data": [
                         {
-                            "client_id": 1,
+                            "client_id": "client_1",
                             "avg_metric_value": 0.456,
                             "best_metric_value": 0.321,
                             "latest_metric_value": 0.342,
                             "num_updates": 20
                         },
                         {
-                            "client_id": 2,
+                            "client_id": "client_2",
                             "avg_metric_value": 0.412,
                             "best_metric_value": 0.298,
                             "latest_metric_value": 0.305,
                             "num_updates": 20
                         }
                     ],
-                    "best_performing_client_id": 2,
-                    "worst_performing_client_id": 7
+                    "best_performing_client_id": "client_2",
+                    "worst_performing_client_id": "client_7"
                 }
             ]
         }
     )
 
-    experiment_id: int = Field(..., gt=0, description="Experiment ID")
+    experiment_id: str = Field(..., description="Experiment ID (UUID)")
     metric_name: str = Field(..., description="Metric being compared across clients")
     total_clients: int = Field(..., ge=0, description="Total number of clients in the experiment")
     clients_data: List[ClientPerformanceData] = Field(..., description="Performance data for each client")
-    best_performing_client_id: Optional[int] = Field(None, description="ID of client with best (lowest) metric value")
-    worst_performing_client_id: Optional[int] = Field(None, description="ID of client with worst (highest) metric value")
+    best_performing_client_id: Optional[str] = Field(None, description="ID of client with best (lowest) metric value")
+    worst_performing_client_id: Optional[str] = Field(None, description="ID of client with worst (highest) metric value")

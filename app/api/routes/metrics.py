@@ -3,10 +3,8 @@
 Endpoints for recording and retrieving experiment performance metrics.
 """
 
+from typing import Annotated, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
-from sqlalchemy.ext.asyncio import AsyncSession
-from typing import Optional
-from app.infrastructure import get_session
 from app.api.schemas.metrics_schemas import (
     AddMetricRequest,
     AddMetricsBatchRequest,
@@ -14,19 +12,23 @@ from app.api.schemas.metrics_schemas import (
     MetricListResponse,
 )
 from app.api.dependencies import get_metrics_service
+from app.application.services import MetricsService
 from app.core.metrics import PerformanceMetric
 from app.utils.exceptions import EntityNotFoundError
 
 router = APIRouter(prefix="/experiments", tags=["metrics"])
 
+# Type alias for dependency injection
+MetricsServiceDep = Annotated[MetricsService, Depends(get_metrics_service)]
+
 @router.post("/{experiment_id}/metrics", response_model=MetricResponse, status_code=status.HTTP_201_CREATED)
 async def add_metric(
     experiment_id: str,
     request: AddMetricRequest,
-    db: AsyncSession = Depends(get_session),
+    service: MetricsServiceDep,
 ):
+    """Add a single performance metric to an experiment."""
     try:
-        service = await get_metrics_service(db)
         metric = await service.add_metric(
             experiment_id=experiment_id,
             name=request.name,
@@ -42,10 +44,10 @@ async def add_metric(
 async def add_metrics_batch(
     experiment_id: str,
     request: AddMetricsBatchRequest,
-    db: AsyncSession = Depends(get_session),
+    service: MetricsServiceDep,
 ):
+    """Add multiple performance metrics to an experiment in a batch."""
     try:
-        service = await get_metrics_service(db)
         metrics_list = [
             PerformanceMetric(
                 name=m.name,
@@ -64,28 +66,50 @@ async def add_metrics_batch(
 @router.get("/{experiment_id}/metrics", response_model=MetricListResponse)
 async def list_metrics(
     experiment_id: str,
-    name: Optional[str] = Query(None),
-    client_id: Optional[str] = Query(None),
-    round_number: Optional[int] = Query(None),
-    db: AsyncSession = Depends(get_session),
+    service: MetricsServiceDep,
+    name: Optional[str] = Query(None, description="Filter by metric name"),
+    client_id: Optional[str] = Query(None, description="Filter by client ID (federated only)"),
+    round_number: Optional[int] = Query(None, ge=0, description="Filter by round number (federated only)"),
 ):
+    """List metrics for an experiment with optional filters."""
     try:
-        service = await get_metrics_service(db)
-        if name:
+        # Apply filters in order of specificity
+        if client_id and round_number is not None:
+            # Get all metrics, then filter manually for both client and round
+            all_metrics = await service.get_experiment_metrics(experiment_id)
+            metrics = [
+                m for m in all_metrics
+                if m.client_id == client_id and m.round_number == round_number
+            ]
+            if name:
+                metrics = [m for m in metrics if m.name == name]
+        elif client_id:
+            metrics = await service.get_client_metrics(experiment_id, client_id)
+            if name:
+                metrics = [m for m in metrics if m.name == name]
+        elif round_number is not None:
+            metrics = await service.get_round_metrics(experiment_id, round_number)
+            if name:
+                metrics = [m for m in metrics if m.name == name]
+        elif name:
             metrics = await service.get_metrics_by_name(experiment_id, name)
         else:
             metrics = await service.get_experiment_metrics(experiment_id)
-        return MetricListResponse(count=len(metrics), metrics=[MetricResponse.model_validate(m) for m in metrics])
+
+        return MetricListResponse(
+            count=len(metrics),
+            metrics=[MetricResponse.model_validate(m) for m in metrics]
+        )
     except EntityNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 @router.delete("/{experiment_id}/metrics", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_experiment_metrics(
     experiment_id: str,
-    db: AsyncSession = Depends(get_session),
+    service: MetricsServiceDep,
 ):
+    """Delete all metrics for an experiment."""
     try:
-        service = await get_metrics_service(db)
         await service.delete_experiment_metrics(experiment_id)
     except EntityNotFoundError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
