@@ -74,8 +74,8 @@ class MetricResponse(BaseModel):
         }
     )
 
-    id: int = Field(..., description="Metric record ID")
-    experiment_id: int = Field(..., description="Associated experiment ID")
+    id: int = Field(..., gt=0, description="Metric record ID")
+    experiment_id: int = Field(..., gt=0, description="Associated experiment ID")
     name: str = Field(..., description="Metric name")
     value: float = Field(..., description="Metric value")
     round_number: Optional[int] = Field(None, description="Training round number (federated only)")
@@ -118,7 +118,7 @@ class MetricListResponse(BaseModel):
         }
     )
 
-    count: int = Field(..., description="Total number of metrics returned")
+    count: int = Field(..., ge=0, description="Total number of metrics returned")
     metrics: List[MetricResponse] = Field(..., description="List of metric records")
 
 
@@ -140,7 +140,7 @@ class MetricStatisticsResponse(BaseModel):
     )
 
     metric_name: str = Field(..., description="Name of the metric")
-    count: int = Field(..., description="Total number of records for this metric")
+    count: int = Field(..., ge=0, description="Total number of records for this metric")
     min_value: float = Field(..., description="Minimum value observed")
     max_value: float = Field(..., description="Maximum value observed")
     avg_value: float = Field(..., description="Average value across all records")
@@ -167,11 +167,11 @@ class RoundConvergenceData(BaseModel):
         }
     )
 
-    round_number: int = Field(..., description="Federated learning round number")
+    round_number: int = Field(..., ge=0, description="Federated learning round number")
     avg_loss: float = Field(..., description="Average loss across all clients in this round")
     min_loss: float = Field(..., description="Minimum loss observed in this round")
     max_loss: float = Field(..., description="Maximum loss observed in this round")
-    num_clients_reported: int = Field(..., description="Number of clients that reported metrics for this round")
+    num_clients_reported: int = Field(..., ge=0, description="Number of clients that reported metrics for this round")
 
 
 class ConvergenceAnalysisResponse(BaseModel):
@@ -204,9 +204,9 @@ class ConvergenceAnalysisResponse(BaseModel):
         }
     )
 
-    experiment_id: int = Field(..., description="Experiment ID")
+    experiment_id: int = Field(..., gt=0, description="Experiment ID")
     metric_name: str = Field(..., description="Metric being analyzed")
-    total_rounds: int = Field(..., description="Total number of federated learning rounds")
+    total_rounds: int = Field(..., ge=0, description="Total number of federated learning rounds")
     rounds_data: List[RoundConvergenceData] = Field(..., description="Per-round convergence statistics")
     convergence_trend: str = Field(..., description="Overall trend (e.g., 'decreasing', 'stable', 'increasing')")
 
@@ -226,11 +226,11 @@ class ClientPerformanceData(BaseModel):
         }
     )
 
-    client_id: int = Field(..., description="Unique client identifier")
+    client_id: int = Field(..., ge=0, description="Unique client identifier")
     avg_metric_value: float = Field(..., description="Average metric value across all rounds for this client")
     best_metric_value: float = Field(..., description="Best (lowest) metric value achieved by this client")
     latest_metric_value: Optional[float] = Field(None, description="Most recent metric value from this client")
-    num_updates: int = Field(..., description="Number of times this client reported metrics")
+    num_updates: int = Field(..., ge=0, description="Number of times this client reported metrics")
 
 
 class ClientComparisonResponse(BaseModel):
@@ -264,9 +264,9 @@ class ClientComparisonResponse(BaseModel):
         }
     )
 
-    experiment_id: int = Field(..., description="Experiment ID")
+    experiment_id: int = Field(..., gt=0, description="Experiment ID")
     metric_name: str = Field(..., description="Metric being compared across clients")
-    total_clients: int = Field(..., description="Total number of clients in the experiment")
+    total_clients: int = Field(..., ge=0, description="Total number of clients in the experiment")
     clients_data: List[ClientPerformanceData] = Field(..., description="Performance data for each client")
     best_performing_client_id: Optional[int] = Field(None, description="ID of client with best (lowest) metric value")
     worst_performing_client_id: Optional[int] = Field(None, description="ID of client with worst (highest) metric value")
