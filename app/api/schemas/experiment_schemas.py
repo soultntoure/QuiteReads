@@ -323,7 +323,7 @@ class ExperimentResponse(BaseModel):
                 "n_rounds": None,
                 "aggregation_strategy": None,
                 "created_at": "2025-12-19T10:30:00",
-                "updated_at": "2025-12-19T14:30:00"
+                "completed_at": "2025-12-19T14:30:00"
             }
         }
     )
@@ -338,12 +338,12 @@ class ExperimentResponse(BaseModel):
     n_rounds: Optional[int] = Field(None, ge=1, description="Number of rounds (federated only)")
     aggregation_strategy: Optional[AggregationStrategy] = Field(None, description="Aggregation strategy (federated only)")
     created_at: datetime = Field(..., description="Timestamp when experiment was created")
-    updated_at: datetime = Field(..., description="Timestamp when experiment was last updated")
+    completed_at: Optional[datetime] = Field(None, description="Timestamp when experiment was completed (null if not completed)")
 
-    @field_serializer('created_at', 'updated_at')
-    def serialize_datetime(self, dt: datetime, _info) -> str:
+    @field_serializer('created_at', 'completed_at')
+    def serialize_datetime(self, dt: Optional[datetime], _info) -> Optional[str]:
         """Serialize datetime to ISO format"""
-        return dt.isoformat()
+        return dt.isoformat() if dt else None
 
     @classmethod
     def from_domain(cls, experiment: "Experiment") -> "ExperimentResponse":
@@ -373,7 +373,7 @@ class ExperimentResponse(BaseModel):
                 else None
             ),
             created_at=experiment.created_at,
-            updated_at=experiment.completed_at if experiment.completed_at else experiment.created_at,
+            completed_at=experiment.completed_at,
         )
 
 
@@ -404,7 +404,7 @@ class ExperimentListResponse(BaseModel):
                         "n_rounds": None,
                         "aggregation_strategy": None,
                         "created_at": "2025-12-19T10:30:00",
-                        "updated_at": "2025-12-19T14:30:00"
+                        "completed_at": "2025-12-19T14:30:00"
                     }
                 ]
             }
