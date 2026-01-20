@@ -204,3 +204,44 @@ Why? Because YOU are actively working the entire time. You can't build multiple 
 **Async is NOT for computation because:**
 - Computation = working = your CPU is busy = already at max capacity
 
+
+# Q&A
+
+### **Question 1:**
+Imagine this service method:
+
+```python
+async def create_experiment(data):
+    validate(data)              # ← Computation (CPU working)
+    experiment = Experiment(**data)
+    await repo.save(experiment) # ← I/O (CPU waiting)
+    return experiment
+```
+Why is it correct that validate(data) is not awaited, but repo.save(experiment) is awaited?
+
+### **Answer**
+The reason `validate(data)` is not awaited is because it’s just Python code running in memory — checks, rules, maybe simple transformations. Since there’s no I/O, there’s nothing to wait for, so `await` would make no sense.
+
+Creating the `Experiment(**data)` object is the same thing. It’s just CPU-bound, in-memory work. Fast, immediate, no suspension point.
+
+On the other hand, `repo.save(experiment)` must be awaited because it’s an I/O operation — most likely a database write or a network call. That’s slow compared to Python execution, and while waiting for it to finish, FastAPI can pause this coroutine and serve other requests.
+
+So the rule isn’t “heavy vs light”.
+The rule is:
+
+**No I/O → no await**  
+**I/O → await**
+
+**`validate(data)` - No await because:**
+- It's doing **computation**: checking if email is valid, if numbers are in range, if required fields exist
+- CPU is **actively working** during this - no waiting
+- It's a regular Python function: `def validate(data):`
+- Completes instantly (maybe 0.001 seconds)
+
+**`repo.save(experiment)` - Awaited because:**
+- It's doing **I/O**: writing to database/disk
+- CPU is **waiting** for the database to confirm the save
+- It's an async function: `async def save(experiment):`
+- Takes time (maybe 50-200ms)
+
+---
