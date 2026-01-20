@@ -23,10 +23,7 @@ ExperimentServiceDep = Annotated[ExperimentService, Depends(get_experiment_servi
 
 
 @router.post("/centralized", response_model=ExperimentResponse, status_code=status.HTTP_201_CREATED)
-async def create_centralized_experiment(
-    request: CreateCentralizedExperimentRequest,
-    service: ExperimentServiceDep,
-):
+async def create_centralized_experiment(request: CreateCentralizedExperimentRequest, service: ExperimentServiceDep):
     """Create a new centralized experiment"""
     experiment = await service.create_centralized_experiment(
         name=request.name,
@@ -36,10 +33,7 @@ async def create_centralized_experiment(
 
 
 @router.post("/federated", response_model=ExperimentResponse, status_code=status.HTTP_201_CREATED)
-async def create_federated_experiment(
-    request: CreateFederatedExperimentRequest,
-    service: ExperimentServiceDep,
-):
+async def create_federated_experiment(request: CreateFederatedExperimentRequest, service: ExperimentServiceDep):
     """Create a new federated experiment"""
     config = request.to_domain_config()
 
@@ -79,31 +73,21 @@ async def list_experiments(
 
 
 @router.get("/{experiment_id}", response_model=ExperimentResponse)
-async def get_experiment(
-    experiment_id: str,
-    service: ExperimentServiceDep,
-):
+async def get_experiment(experiment_id: str,service: ExperimentServiceDep):
     """Get a single experiment by ID"""
     experiment = await service.get_experiment_by_id(experiment_id)
     return ExperimentResponse.from_domain(experiment)
 
 
 @router.post("/{experiment_id}/start", response_model=ExperimentResponse)
-async def start_experiment(
-    experiment_id: str,
-    service: ExperimentServiceDep,
-):
+async def start_experiment(experiment_id: str,service: ExperimentServiceDep):
     """Start an experiment (transition to RUNNING status)"""
     experiment = await service.start_experiment(experiment_id)
     return ExperimentResponse.from_domain(experiment)
 
 
 @router.post("/{experiment_id}/complete", response_model=ExperimentResponse)
-async def complete_experiment(
-    experiment_id: str,
-    request: CompleteExperimentRequest,
-    service: ExperimentServiceDep,
-):
+async def complete_experiment(experiment_id: str, request: CompleteExperimentRequest,service: ExperimentServiceDep):
     """Complete an experiment with final metrics"""
     experiment = await service.complete_experiment(
         experiment_id,
@@ -115,20 +99,14 @@ async def complete_experiment(
 
 
 @router.post("/{experiment_id}/fail", response_model=ExperimentResponse)
-async def fail_experiment(
-    experiment_id: str,
-    service: ExperimentServiceDep,
-):
+async def fail_experiment(experiment_id: str, service: ExperimentServiceDep):
     """Mark experiment as failed"""
     experiment = await service.fail_experiment(experiment_id)
     return ExperimentResponse.from_domain(experiment)
 
 
 @router.delete("/{experiment_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_experiment(
-    experiment_id: str,
-    service: ExperimentServiceDep,
-):
+async def delete_experiment(experiment_id: str, service: ExperimentServiceDep):
     """Delete an experiment"""
     await service.delete_experiment(experiment_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
