@@ -230,3 +230,22 @@ Key insight: User embeddings are client-local (privacy-preserving), only item pa
 ## Related Documentation
 
 See `README.md` in individual modules (`src/data/README.md`, `src/models/README.md`) for implementation details on the underlying ML pipeline (PyTorch Lightning, matrix factorization models).
+
+
+## Code Formatting Preferences
+
+### Function Signatures
+- Use **single-line** format when there are **2 or fewer parameters**
+- Use **multi-line** format (one parameter per line) when there are **3+ parameters**
+
+Examples:
+```python
+# Good: 2 or fewer parameters
+async def create_experiment(request: Request, service: ServiceDep):
+
+# Good: 3+ parameters  
+async def create_experiment(
+    request: Request,
+    service: ServiceDep,
+    db: DatabaseDep,
+):
