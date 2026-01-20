@@ -261,4 +261,4 @@ ExperimentServiceDep = Annotated[ExperimentService, Depends(get_cached_experimen
 
 ---
 
-**Does this clarify it?** The type alias is purely a developer experience improvement—it doesn't add new capabilities, just reduces repetition.
+![alt text](image-3.png)
