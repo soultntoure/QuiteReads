@@ -73,14 +73,14 @@ async def list_experiments(
 
 
 @router.get("/{experiment_id}", response_model=ExperimentResponse)
-async def get_experiment(experiment_id: str,service: ExperimentServiceDep):
+async def get_experiment(experiment_id: str, service: ExperimentServiceDep):
     """Get a single experiment by ID"""
     experiment = await service.get_experiment_by_id(experiment_id)
     return ExperimentResponse.from_domain(experiment)
 
 
 @router.post("/{experiment_id}/start", response_model=ExperimentResponse)
-async def start_experiment(experiment_id: str,service: ExperimentServiceDep):
+async def start_experiment(experiment_id: str, service: ExperimentServiceDep):
     """Start an experiment (transition to RUNNING status)"""
     experiment = await service.start_experiment(experiment_id)
     return ExperimentResponse.from_domain(experiment)
