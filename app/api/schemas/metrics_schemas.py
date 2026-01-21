@@ -7,14 +7,15 @@ from typing import Optional, List
 
 from pydantic import BaseModel, Field, ConfigDict
 
+# Request schemas
 
 class AddMetricRequest(BaseModel):
     model_config = ConfigDict(
         json_schema_extra={
             "examples": [
                 {
-                    "name": "train_loss",
-                    "value": 0.342,
+                    "name": "rmse",
+                    "value": 0.842,
                     "round_number": 5,
                     "client_id": "client_2"
                 }
@@ -35,14 +36,14 @@ class AddMetricsBatchRequest(BaseModel):
                 {
                     "metrics": [
                         {
-                            "name": "train_loss",
-                            "value": 0.342,
+                            "name": "rmse",
+                            "value": 0.842,
                             "round_number": 5,
                             "client_id": "client_1"
                         },
                         {
-                            "name": "val_rmse",
-                            "value": 0.456,
+                            "name": "mae",
+                            "value": 0.656,
                             "round_number": 5,
                             "client_id": "client_1"
                         }
@@ -62,8 +63,8 @@ class MetricResponse(BaseModel):
             "examples": [
                 {
                     "experiment_id": "550e8400-e29b-41d4-a716-446655440000",
-                    "name": "train_loss",
-                    "value": 0.342,
+                    "name": "rmse",
+                    "value": 0.842,
                     "round_number": 5,
                     "client_id": "client_2"
                 }
@@ -87,15 +88,15 @@ class MetricListResponse(BaseModel):
                     "metrics": [
                         {
                             "experiment_id": "550e8400-e29b-41d4-a716-446655440000",
-                            "name": "train_loss",
-                            "value": 0.342,
+                            "name": "rmse",
+                            "value": 0.842,
                             "round_number": 5,
                             "client_id": "client_2"
                         },
                         {
                             "experiment_id": "550e8400-e29b-41d4-a716-446655440000",
-                            "name": "val_rmse",
-                            "value": 0.456,
+                            "name": "mae",
+                            "value": 0.656,
                             "round_number": 5,
                             "client_id": "client_2"
                         }
@@ -114,11 +115,11 @@ class MetricStatisticsResponse(BaseModel):
         json_schema_extra={
             "examples": [
                 {
-                    "metric_name": "train_loss",
+                    "metric_name": "rmse",
                     "count": 100,
-                    "min_value": 0.221,
-                    "max_value": 0.876,
-                    "avg_value": 0.453
+                    "min_value": 0.721,
+                    "max_value": 1.376,
+                    "avg_value": 0.953
                 }
             ]
         }
@@ -159,21 +160,21 @@ class ConvergenceAnalysisResponse(BaseModel):
             "examples": [
                 {
                     "experiment_id": "550e8400-e29b-41d4-a716-446655440000",
-                    "metric_name": "train_loss",
+                    "metric_name": "rmse",
                     "total_rounds": 20,
                     "rounds_data": [
                         {
                             "round_number": 1,
-                            "avg_loss": 0.876,
-                            "min_loss": 0.734,
-                            "max_loss": 1.023,
+                            "avg_loss": 1.376,
+                            "min_loss": 1.234,
+                            "max_loss": 1.523,
                             "num_clients_reported": 10
                         },
                         {
                             "round_number": 20,
-                            "avg_loss": 0.342,
-                            "min_loss": 0.298,
-                            "max_loss": 0.421,
+                            "avg_loss": 0.842,
+                            "min_loss": 0.798,
+                            "max_loss": 0.921,
                             "num_clients_reported": 10
                         }
                     ],
@@ -189,6 +190,7 @@ class ConvergenceAnalysisResponse(BaseModel):
     rounds_data: List[RoundConvergenceData] = Field(..., description="Per-round convergence statistics")
     convergence_trend: str = Field(..., description="Overall trend (e.g., 'decreasing', 'stable', 'increasing')")
 
+# client analytics schemas
 
 class ClientPerformanceData(BaseModel):
     model_config = ConfigDict(
@@ -218,21 +220,21 @@ class ClientComparisonResponse(BaseModel):
             "examples": [
                 {
                     "experiment_id": "550e8400-e29b-41d4-a716-446655440000",
-                    "metric_name": "train_loss",
+                    "metric_name": "rmse",
                     "total_clients": 10,
                     "clients_data": [
                         {
                             "client_id": "client_1",
-                            "avg_metric_value": 0.456,
-                            "best_metric_value": 0.321,
-                            "latest_metric_value": 0.342,
+                            "avg_metric_value": 0.956,
+                            "best_metric_value": 0.821,
+                            "latest_metric_value": 0.842,
                             "num_updates": 20
                         },
                         {
                             "client_id": "client_2",
-                            "avg_metric_value": 0.412,
-                            "best_metric_value": 0.298,
-                            "latest_metric_value": 0.305,
+                            "avg_metric_value": 0.912,
+                            "best_metric_value": 0.798,
+                            "latest_metric_value": 0.805,
                             "num_updates": 20
                         }
                     ],
