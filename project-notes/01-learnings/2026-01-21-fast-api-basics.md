@@ -1,6 +1,6 @@
 
 ## FastAPI App & Routing (Core, Not Syntax)
-
+![alt text](image-5.png)
 ### The non-negotiable idea
 
 FastAPI is **not** “a file with endpoints”.
@@ -135,7 +135,7 @@ They:
 
 > If removing it changes *which* thing you mean → path
 > If removing it changes *how* you view it → query
-
+![alt text](image-6.png)
 ---
 
 ## Quick checkpoint (one question)
@@ -149,4 +149,5 @@ GET /experiments/123?version=2
 **Question:**
 Which part identifies the resource, and which part modifies the request behavior?
 
-Answer in one short sentence.
+**Answer:**
+The path /experiments/123 identifies the resource, while the query parameter version=2 modifies the request behavior
