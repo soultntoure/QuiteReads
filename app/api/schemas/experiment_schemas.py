@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from app.core.metrics import ExperimentMetrics as DomainExperimentMetrics
 
 
+# Enum classes
 class ExperimentType(str, Enum):
     CENTRALIZED = "centralized"
     FEDERATED = "federated"
@@ -109,6 +110,7 @@ class AggregationStrategy(str, Enum):
         
         return api_strategy
 
+# Configuration Schema
 
 class ConfigurationSchema(BaseModel):
     """Shared configuration schema for both centralized and federated experiments"""
@@ -164,6 +166,7 @@ class ConfigurationSchema(BaseModel):
             model_type=config.model_type.value,
         )
 
+# Request schemas
 
 class CreateCentralizedExperimentRequest(BaseModel):
     """Request to create a centralized experiment"""
@@ -403,6 +406,28 @@ class ExperimentListResponse(BaseModel):
                         "n_clients": None,
                         "n_rounds": None,
                         "aggregation_strategy": None,
+                        "created_at": "2025-12-19T10:30:00",
+                        "completed_at": "2025-12-19T14:30:00"
+                    },
+                    {
+                        "id": "550e8400-e29b-41d4-a716-446655440001",
+                        "name": "Federated Matrix Factorization Exp 1",
+                        "type": "federated",
+                        "status": "completed",
+                        "config": {
+                            "learning_rate": 0.01,
+                            "batch_size": 32,
+                            "epochs": 10,
+                            "model_type": "biased_svd"
+                        },
+                        "metrics": {
+                            "final_rmse": 0.45,
+                            "final_mae": 0.32,
+                            "training_time_seconds": 3600.5
+                        },
+                        "n_clients": 10,
+                        "n_rounds": 10,
+                        "aggregation_strategy": "fedavg",
                         "created_at": "2025-12-19T10:30:00",
                         "completed_at": "2025-12-19T14:30:00"
                     }
