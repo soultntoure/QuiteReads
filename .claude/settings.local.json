@@ -28,7 +28,9 @@
       "Bash(uv run pytest:*)",
       "mcp__context7__resolve-library-id",
       "mcp__context7__query-docs",
-      "mcp__perplexity__search"
+      "mcp__perplexity__search",
+      "Skill(module-readme-standard)",
+      "Skill(module-readme-standard:*)"
     ],
     "deny": [],
     "ask": []
