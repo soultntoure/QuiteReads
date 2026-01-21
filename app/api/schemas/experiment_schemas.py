@@ -116,12 +116,14 @@ class ConfigurationSchema(BaseModel):
     """Shared configuration schema for both centralized and federated experiments"""
     model_config = ConfigDict(
         json_schema_extra={
-            "examples": {
-                "learning_rate": 0.01,
-                "batch_size": 32,
-                "epochs": 10,
-                "model_type": "biased_svd"
-            }
+            "examples": [
+                {
+                    "learning_rate": 0.01,
+                    "batch_size": 32,
+                    "epochs": 10,
+                    "model_type": "biased_svd"
+                }
+            ]
         }
     )
 
@@ -172,15 +174,17 @@ class CreateCentralizedExperimentRequest(BaseModel):
     """Request to create a centralized experiment"""
     model_config = ConfigDict(
         json_schema_extra={
-            "examples": {
-                "name": "Centralized Matrix Factorization Exp 1",
-                "config": {
-                    "learning_rate": 0.01,
-                    "batch_size": 32,
-                    "epochs": 10,
-                    "model_type": "biased_svd"
+            "examples": [
+                {
+                    "name": "Centralized Matrix Factorization Exp 1",
+                    "config": {
+                        "learning_rate": 0.01,
+                        "batch_size": 32,
+                        "epochs": 10,
+                        "model_type": "biased_svd"
+                    }
                 }
-            }
+            ]
         }
     )
 
@@ -208,18 +212,20 @@ class CreateFederatedExperimentRequest(BaseModel):
     """Request to create a federated experiment"""
     model_config = ConfigDict(
         json_schema_extra={
-            "examples": {
-                "name": "Federated Matrix Factorization Exp 1",
-                "config": {
-                    "learning_rate": 0.01,
-                    "batch_size": 32,
-                    "epochs": 5,
-                    "model_type": "biased_svd"
-                },
-                "n_clients": 5,
-                "n_rounds": 20,
-                "aggregation_strategy": "FedAvg"
-            }
+            "examples": [
+                {
+                    "name": "Federated Matrix Factorization Exp 1",
+                    "config": {
+                        "learning_rate": 0.01,
+                        "batch_size": 32,
+                        "epochs": 5,
+                        "model_type": "biased_svd"
+                    },
+                    "n_clients": 5,
+                    "n_rounds": 20,
+                    "aggregation_strategy": "FedAvg"
+                }
+            ]
         }
     )
 
@@ -253,11 +259,13 @@ class CompleteExperimentRequest(BaseModel):
     """Request to mark experiment as completed with final metrics"""
     model_config = ConfigDict(
         json_schema_extra={
-            "examples": {
-                "final_rmse": 0.45,
-                "final_mae": 0.32,
-                "training_time_seconds": 3600.5
-            }
+            "examples": [
+                {
+                    "final_rmse": 0.45,
+                    "final_mae": 0.32,
+                    "training_time_seconds": 3600.5
+                }
+            ]
         }
     )
 
@@ -270,11 +278,13 @@ class ExperimentMetricsSchema(BaseModel):
     """Final metrics for experiment response"""
     model_config = ConfigDict(
         json_schema_extra={
-            "examples": {
-                "final_rmse": 0.45,
-                "final_mae": 0.32,
-                "training_time_seconds": 3600.5
-            }
+            "examples": [
+                {
+                    "final_rmse": 0.45,
+                    "final_mae": 0.32,
+                    "training_time_seconds": 3600.5
+                }
+            ]
         }
     )
 
@@ -306,28 +316,30 @@ class ExperimentResponse(BaseModel):
     """Unified response for both centralized and federated experiments"""
     model_config = ConfigDict(
         json_schema_extra={
-            "examples": {
-                "id": "550e8400-e29b-41d4-a716-446655440000",
-                "name": "Centralized Matrix Factorization Exp 1",
-                "type": "centralized",
-                "status": "completed",
-                "config": {
-                    "learning_rate": 0.01,
-                    "batch_size": 32,
-                    "epochs": 10,
-                    "model_type": "biased_svd"
-                },
-                "metrics": {
-                    "final_rmse": 0.45,
-                    "final_mae": 0.32,
-                    "training_time_seconds": 3600.5
-                },
-                "n_clients": None,
-                "n_rounds": None,
-                "aggregation_strategy": None,
-                "created_at": "2025-12-19T10:30:00",
-                "completed_at": "2025-12-19T14:30:00"
-            }
+            "examples": [
+                {
+                    "id": "550e8400-e29b-41d4-a716-446655440000",
+                    "name": "Centralized Matrix Factorization Exp 1",
+                    "type": "centralized",
+                    "status": "completed",
+                    "config": {
+                        "learning_rate": 0.01,
+                        "batch_size": 32,
+                        "epochs": 10,
+                        "model_type": "biased_svd"
+                    },
+                    "metrics": {
+                        "final_rmse": 0.45,
+                        "final_mae": 0.32,
+                        "training_time_seconds": 3600.5
+                    },
+                    "n_clients": None,
+                    "n_rounds": None,
+                    "aggregation_strategy": None,
+                    "created_at": "2025-12-19T10:30:00",
+                    "completed_at": "2025-12-19T14:30:00"
+                }
+            ]
         }
     )
 
@@ -384,55 +396,57 @@ class ExperimentListResponse(BaseModel):
     """Wrapper for experiment list responses"""
     model_config = ConfigDict(
         json_schema_extra={
-            "examples": {
-                "count": 2,
-                "experiments": [
-                    {
-                        "id": "550e8400-e29b-41d4-a716-446655440000",
-                        "name": "Centralized Matrix Factorization Exp 1",
-                        "type": "centralized",
-                        "status": "completed",
-                        "config": {
-                            "learning_rate": 0.01,
-                            "batch_size": 32,
-                            "epochs": 10,
-                            "model_type": "biased_svd"
+            "examples": [
+                {
+                    "count": 2,
+                    "experiments": [
+                        {
+                            "id": "550e8400-e29b-41d4-a716-446655440000",
+                            "name": "Centralized Matrix Factorization Exp 1",
+                            "type": "centralized",
+                            "status": "completed",
+                            "config": {
+                                "learning_rate": 0.01,
+                                "batch_size": 32,
+                                "epochs": 10,
+                                "model_type": "biased_svd"
+                            },
+                            "metrics": {
+                                "final_rmse": 0.45,
+                                "final_mae": 0.32,
+                                "training_time_seconds": 3600.5
+                            },
+                            "n_clients": None,
+                            "n_rounds": None,
+                            "aggregation_strategy": None,
+                            "created_at": "2025-12-19T10:30:00",
+                            "completed_at": "2025-12-19T14:30:00"
                         },
-                        "metrics": {
-                            "final_rmse": 0.45,
-                            "final_mae": 0.32,
-                            "training_time_seconds": 3600.5
-                        },
-                        "n_clients": None,
-                        "n_rounds": None,
-                        "aggregation_strategy": None,
-                        "created_at": "2025-12-19T10:30:00",
-                        "completed_at": "2025-12-19T14:30:00"
-                    },
-                    {
-                        "id": "550e8400-e29b-41d4-a716-446655440001",
-                        "name": "Federated Matrix Factorization Exp 1",
-                        "type": "federated",
-                        "status": "completed",
-                        "config": {
-                            "learning_rate": 0.01,
-                            "batch_size": 32,
-                            "epochs": 10,
-                            "model_type": "biased_svd"
-                        },
-                        "metrics": {
-                            "final_rmse": 0.45,
-                            "final_mae": 0.32,
-                            "training_time_seconds": 3600.5
-                        },
-                        "n_clients": 10,
-                        "n_rounds": 10,
-                        "aggregation_strategy": "fedavg",
-                        "created_at": "2025-12-19T10:30:00",
-                        "completed_at": "2025-12-19T14:30:00"
-                    }
-                ]
-            }
+                        {
+                            "id": "550e8400-e29b-41d4-a716-446655440001",
+                            "name": "Federated Matrix Factorization Exp 1",
+                            "type": "federated",
+                            "status": "completed",
+                            "config": {
+                                "learning_rate": 0.01,
+                                "batch_size": 32,
+                                "epochs": 10,
+                                "model_type": "biased_svd"
+                            },
+                            "metrics": {
+                                "final_rmse": 0.45,
+                                "final_mae": 0.32,
+                                "training_time_seconds": 3600.5
+                            },
+                            "n_clients": 10,
+                            "n_rounds": 10,
+                            "aggregation_strategy": "fedavg",
+                            "created_at": "2025-12-19T10:30:00",
+                            "completed_at": "2025-12-19T14:30:00"
+                        }
+                    ]
+                }
+            ]
         }
     )
 
