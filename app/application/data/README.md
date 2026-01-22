@@ -3,6 +3,8 @@
 ## Overview
 Provides data loading, preprocessing, and partitioning capabilities for federated book recommendation experiments. Handles the complete pipeline from raw Goodreads JSON to PyTorch-ready tensors and federated client partitions.
 
+> **📊 [Complete Data Flow Guide](DATA_FLOW.md)** - Detailed visual walkthrough of the entire data pipeline from raw JSON to training-ready tensors, including directory structures, file sizes, and transformation statistics.
+
 ## Purpose
 - Load and preprocess Goodreads rating data (JSON → parquet → PyTorch tensors)
 - Filter sparse users/items and create train/val/test splits
