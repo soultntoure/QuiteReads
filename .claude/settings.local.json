@@ -30,7 +30,8 @@
       "mcp__context7__query-docs",
       "mcp__perplexity__search",
       "Skill(module-readme-standard)",
-      "Skill(module-readme-standard:*)"
+      "Skill(module-readme-standard:*)",
+      "Bash(uv add:*)"
     ],
     "deny": [],
     "ask": []
