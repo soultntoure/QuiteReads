@@ -12,6 +12,10 @@ from app.application.data.partitioner import (
     UserPartitioner,
     verify_partitions,
 )
+from app.application.data.preprocessing import (
+    PreprocessingConfig,
+    run_preprocessing_pipeline,
+)
 from app.application.data.ratings_dataset import RatingsDataset
 
 __all__ = [
@@ -27,4 +31,7 @@ __all__ = [
     "PartitionConfig",
     "PartitionResult",
     "verify_partitions",
+    # Preprocessing
+    "PreprocessingConfig",
+    "run_preprocessing_pipeline",
 ]

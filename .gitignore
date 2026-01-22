@@ -56,3 +56,6 @@ Thumbs.db
 project-notes/06-scratchpad/
 project-notes/01-learnings/2026-01-21-Creating_My_First_Claude_Code_Skill_MEDIUM.md
 data/raw/goodreads_interactions_poetry.json
+
+data/raw/
+data/processed/
