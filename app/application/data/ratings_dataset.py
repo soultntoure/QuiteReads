@@ -3,8 +3,6 @@
 Pure PyTorch Dataset for user-item rating data. Loads preprocessed parquet
 files containing (user_idx, item_idx, rating) tuples and provides them as
 tensors for training.
-
-Adapted from research repo: src/data/datamodule.py (RatingsDataset)
 """
 
 from pathlib import Path

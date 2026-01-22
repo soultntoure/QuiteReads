@@ -25,7 +25,7 @@ Provides data loading, preprocessing, and partitioning capabilities for federate
 ## 1. ratings_dataset.py
 
 ### Overview
-Pure PyTorch Dataset implementation that loads preprocessed parquet files containing (user_idx, item_idx, rating) tuples and provides them as tensors for training. Replaces the `RatingsDataset` from the research repo's PyTorch Lightning DataModule.
+PyTorch Dataset implementation that loads preprocessed parquet files containing (user_idx, item_idx, rating) tuples and provides them as tensors for training.
 
 ### Components
 
