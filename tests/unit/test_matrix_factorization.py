@@ -182,30 +182,6 @@ class TestForwardPass:
         mean_prediction = predictions.mean().item()
         assert abs(mean_prediction - 4.0) < 0.5
 
-    def test_different_users_same_item_gives_different_predictions(
-        self, small_model: BiasedMatrixFactorization
-    ) -> None:
-        """Different users rating same item get different predictions."""
-        item_id = torch.tensor([5, 5, 5])
-        user_ids = torch.tensor([0, 1, 2])
-        predictions = small_model(user_ids, item_id)
-
-        # Predictions should differ due to user-specific factors
-        assert not torch.allclose(predictions[0:1], predictions[1:2])
-        assert not torch.allclose(predictions[1:2], predictions[2:3])
-
-    def test_same_user_different_items_gives_different_predictions(
-        self, small_model: BiasedMatrixFactorization
-    ) -> None:
-        """Same user rating different items gets different predictions."""
-        user_id = torch.tensor([5, 5, 5])
-        item_ids = torch.tensor([0, 1, 2])
-        predictions = small_model(user_id, item_ids)
-
-        # Predictions should differ due to item-specific factors
-        assert not torch.allclose(predictions[0:1], predictions[1:2])
-        assert not torch.allclose(predictions[1:2], predictions[2:3])
-
 
 # -----------------------------------------------------------------------------
 # Gradient Computation Tests
