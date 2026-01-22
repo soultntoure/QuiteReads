@@ -24,6 +24,8 @@ dev-dependencies = [
   "pydantic-settings",
   "pandas",
   "numpy",
+  "torch",
+  "pytorch-lightning",
   "scikit-surprise",
   "flwr[simulation]",
   "pytest",
