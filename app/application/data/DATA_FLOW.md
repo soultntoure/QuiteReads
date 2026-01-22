@@ -6,6 +6,7 @@ Complete guide to data flow from raw Goodreads JSON to PyTorch-ready tensors and
 
 ## Table of Contents
 - [Overview](#overview)
+- [File Contributions Map](#file-contributions-map)
 - [Complete Flow Diagram](#complete-flow-diagram)
 - [Stage-by-Stage Breakdown](#stage-by-stage-breakdown)
   - [Stage 1: Raw Data Input](#stage-1-raw-data-input)
@@ -26,6 +27,256 @@ The data pipeline transforms raw Goodreads JSON data into PyTorch-ready tensors 
 2. **Preprocessing**: Filter sparse entities, create ID mappings, split data
 3. **Processed Outputs**: Clean parquet files with metadata and mappings
 4. **Training Paths**: Either centralized (DatasetLoader) or federated (UserPartitioner)
+
+---
+
+## File Contributions Map
+
+### Which File Does What?
+
+| File | Stage | Responsibility | Reads From | Writes To |
+|------|-------|----------------|------------|-----------|
+| `preprocessing.py` | 2 | Transforms raw JSON into clean parquet splits | `data/raw/*.json` | `data/processed/*`, `data/splits/*` |
+| `dataset_loader.py` | 4A | High-level manager that loads metadata and creates datasets | `data/processed/metadata.json`, `data/processed/*_mapping.json` | - (in-memory) |
+| `ratings_dataset.py` | 4A/4B | PyTorch Dataset that loads parquet into tensors | `data/splits/*.parquet` or `data/federated/client_X/*.parquet` | - (in-memory) |
+| `data_loader_factory.py` | 4A/4B | Creates PyTorch DataLoaders with batching/shuffling | - (receives RatingsDataset) | - (in-memory) |
+| `partitioner.py` | 4B | Splits data by user for federated simulation | `data/splits/train.parquet`, `data/splits/val.parquet` | `data/federated/client_X/*` |
+| `__init__.py` | - | Exports public API | - | - |
+
+### File-to-File Data Flow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                           DATA MODULE FILE ARCHITECTURE                          │
+└─────────────────────────────────────────────────────────────────────────────────┘
+
+                    ┌──────────────────────────────────────┐
+                    │          RAW DATA (External)         │
+                    │  data/raw/goodreads_interactions_    │
+                    │           poetry.json                │
+                    └─────────────────┬────────────────────┘
+                                      │
+                                      │ JSON Lines
+                                      ▼
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                         preprocessing.py                                         │
+│  ═══════════════════════════════════════════════════════════════════════════    │
+│                                                                                  │
+│  Functions:                          Produces:                                   │
+│  ├─ load_raw_interactions()          ├─ data/processed/                         │
+│  ├─ filter_implicit_interactions()   │   ├─ interactions_filtered.parquet       │
+│  ├─ iterative_filter()               │   ├─ interactions_indexed.parquet        │
+│  ├─ create_id_mappings()             │   ├─ user_mapping.json                   │
+│  ├─ apply_id_mappings()              │   ├─ item_mapping.json                   │
+│  ├─ create_train_val_test_split()    │   └─ metadata.json                       │
+│  ├─ compute_statistics()             │                                           │
+│  └─ save_artifacts()                 └─ data/splits/                            │
+│                                          ├─ train.parquet                        │
+│  Entry point:                            ├─ val.parquet                          │
+│  └─ run_preprocessing_pipeline()         └─ test.parquet                        │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+                                      │
+                                      │ Parquet files + JSON mappings
+                                      │
+           ┌──────────────────────────┴──────────────────────────┐
+           │                                                      │
+           ▼                                                      ▼
+┌─────────────────────────────────┐              ┌─────────────────────────────────┐
+│  PATH A: CENTRALIZED TRAINING   │              │  PATH B: FEDERATED TRAINING     │
+└─────────────────────────────────┘              └─────────────────────────────────┘
+           │                                                      │
+           ▼                                                      ▼
+┌─────────────────────────────────┐              ┌─────────────────────────────────┐
+│     dataset_loader.py           │              │       partitioner.py            │
+│  ═══════════════════════════    │              │  ═══════════════════════════    │
+│                                 │              │                                 │
+│  Class: DatasetLoader           │              │  Class: UserPartitioner         │
+│  ├─ load()                      │              │  ├─ partition()                 │
+│  │   Reads:                     │              │  │   Reads:                     │
+│  │   ├─ metadata.json           │              │  │   ├─ train.parquet          │
+│  │   ├─ user_mapping.json       │              │  │   └─ val.parquet            │
+│  │   └─ item_mapping.json       │              │  │                              │
+│  │                              │              │  │   Writes:                    │
+│  ├─ Properties:                 │              │  │   └─ data/federated/         │
+│  │   ├─ n_users (5949)          │              │  │       ├─ partition_config.json
+│  │   ├─ n_items (2856)          │              │  │       ├─ client_0/           │
+│  │   └─ global_mean (4.08)      │              │  │       │   ├─ train.parquet   │
+│  │                              │              │  │       │   └─ val.parquet     │
+│  ├─ get_train_loader()────┐     │              │  │       ├─ client_1/           │
+│  ├─ get_val_loader()──────┤     │              │  │       └─ ...                 │
+│  └─ get_test_loader()─────┤     │              │  │                              │
+│                           │     │              │  ├─ get_client_paths()          │
+└───────────────────────────┼─────┘              │  └─ get_local_user_data()       │
+                            │                    │                                 │
+                            │                    └────────────────┬────────────────┘
+                            │                                     │
+                            ▼                                     ▼
+┌─────────────────────────────────┐              ┌─────────────────────────────────┐
+│     ratings_dataset.py          │              │     ratings_dataset.py          │
+│  ═══════════════════════════    │              │  ═══════════════════════════    │
+│                                 │              │                                 │
+│  Class: RatingsDataset          │              │  (Same class, different data)   │
+│  ├─ __init__(parquet_path)      │              │                                 │
+│  │   Reads: splits/*.parquet    │              │  Reads:                         │
+│  │                              │              │  federated/client_X/*.parquet   │
+│  ├─ __getitem__(idx)            │              │                                 │
+│  │   Returns: (user, item, rat) │              │  Each client gets own dataset   │
+│  │                              │              │  with exclusive users           │
+│  ├─ Properties:                 │              │                                 │
+│  │   ├─ n_users                 │              │                                 │
+│  │   ├─ n_items                 │              │                                 │
+│  │   ├─ rating_mean             │              │                                 │
+│  │   └─ local_users             │              │                                 │
+│  │                              │              │                                 │
+└───────────────────┬─────────────┘              └────────────────┬────────────────┘
+                    │                                             │
+                    │ PyTorch Dataset                             │ PyTorch Dataset
+                    ▼                                             ▼
+┌─────────────────────────────────┐              ┌─────────────────────────────────┐
+│   data_loader_factory.py        │              │   data_loader_factory.py        │
+│  ═══════════════════════════    │              │  ═══════════════════════════    │
+│                                 │              │                                 │
+│  Functions:                     │              │  (Same functions)               │
+│  ├─ create_train_loader()       │              │                                 │
+│  │   • shuffle=True             │              │  Per-client DataLoaders         │
+│  │   • batch_size configurable  │              │  for local training             │
+│  │                              │              │                                 │
+│  └─ create_eval_loader()        │              │                                 │
+│      • shuffle=False            │              │                                 │
+│      • deterministic eval       │              │                                 │
+│                                 │              │                                 │
+└───────────────────┬─────────────┘              └────────────────┬────────────────┘
+                    │                                             │
+                    │ PyTorch DataLoader                          │ PyTorch DataLoader
+                    ▼                                             ▼
+┌─────────────────────────────────┐              ┌─────────────────────────────────┐
+│      TRAINING LOOP              │              │   FEDERATED SIMULATION          │
+│  (External: model training)     │              │  (External: Flower framework)   │
+│                                 │              │                                 │
+│  for users, items, ratings      │              │  Client trains locally          │
+│  in train_loader:               │              │  Server aggregates updates      │
+│      predictions = model(...)   │              │                                 │
+│      loss = criterion(...)      │              │                                 │
+│      loss.backward()            │              │                                 │
+└─────────────────────────────────┘              └─────────────────────────────────┘
+```
+
+### File Interaction Summary
+
+```
+                     ┌─────────────────────────┐
+                     │   preprocessing.py      │
+                     │   (ONE-TIME EXECUTION)  │
+                     └───────────┬─────────────┘
+                                 │
+                     ┌───────────┴───────────┐
+                     │                       │
+                     ▼                       ▼
+          ┌──────────────────┐    ┌──────────────────┐
+          │ data/processed/  │    │   data/splits/   │
+          │ (mappings, meta) │    │ (train/val/test) │
+          └────────┬─────────┘    └────────┬─────────┘
+                   │                       │
+                   ▼                       │
+          ┌──────────────────┐             │
+          │ dataset_loader.py│◄────────────┘
+          │ (loads metadata) │             │
+          └────────┬─────────┘             │
+                   │                       │
+                   │ creates               │
+                   ▼                       ▼
+          ┌──────────────────┐    ┌──────────────────┐
+          │ratings_dataset.py│    │  partitioner.py  │
+          │ (loads parquet)  │    │ (splits by user) │
+          └────────┬─────────┘    └────────┬─────────┘
+                   │                       │
+                   │                       ▼
+                   │              ┌──────────────────┐
+                   │              │ data/federated/  │
+                   │              │  (client dirs)   │
+                   │              └────────┬─────────┘
+                   │                       │
+                   │                       ▼
+                   │              ┌──────────────────┐
+                   │              │ratings_dataset.py│
+                   │              │ (per-client)     │
+                   │              └────────┬─────────┘
+                   │                       │
+                   ▼                       ▼
+          ┌──────────────────────────────────────────┐
+          │         data_loader_factory.py           │
+          │     (wraps datasets with DataLoader)     │
+          └──────────────────────────────────────────┘
+```
+
+### What Happens After Preprocessing?
+
+After running `preprocessing.py`, here's what each file does:
+
+#### Centralized Training Flow
+```
+1. dataset_loader.py
+   │
+   ├── load() is called
+   │   ├── Reads data/processed/metadata.json → gets n_users, n_items, global_mean
+   │   ├── Reads data/processed/user_mapping.json → stores for potential reverse lookup
+   │   └── Reads data/processed/item_mapping.json → stores for potential reverse lookup
+   │
+   ├── get_train_loader() is called
+   │   ├── Internally creates RatingsDataset(data/splits/train.parquet)
+   │   ├── Passes dataset to create_train_loader() from data_loader_factory.py
+   │   └── Returns PyTorch DataLoader with shuffle=True
+   │
+   └── get_val_loader() / get_test_loader()
+       ├── Creates RatingsDataset for val/test parquet
+       └── Returns DataLoader with shuffle=False
+
+2. ratings_dataset.py (called by dataset_loader.py)
+   │
+   └── __init__(parquet_path)
+       ├── Reads parquet file with pandas
+       ├── Extracts user_idx column → converts to LongTensor
+       ├── Extracts item_idx column → converts to LongTensor
+       ├── Extracts rating column → converts to FloatTensor
+       └── Stores n_users, n_items, rating_mean as properties
+
+3. data_loader_factory.py (called by dataset_loader.py)
+   │
+   └── create_train_loader(dataset, batch_size, num_workers)
+       ├── Creates torch.utils.data.DataLoader
+       ├── Sets shuffle=True for training
+       └── Returns batched iterator over (users, items, ratings) tensors
+```
+
+#### Federated Training Flow
+```
+1. partitioner.py
+   │
+   ├── partition() is called
+   │   ├── Reads data/splits/train.parquet → gets all training interactions
+   │   ├── Reads data/splits/val.parquet → gets all validation interactions
+   │   ├── Extracts unique users (5,949)
+   │   ├── Shuffles users with seed for reproducibility
+   │   ├── Splits into N chunks (e.g., 10 clients × ~595 users)
+   │   │
+   │   └── For each client_id in range(N):
+   │       ├── Filters train data for client's users → saves to client_X/train.parquet
+   │       ├── Filters val data for client's users → saves to client_X/val.parquet
+   │       └── Records user assignments in partition_config.json
+   │
+   └── get_client_paths(client_id) → returns (train_path, val_path) for that client
+
+2. ratings_dataset.py (called per client)
+   │
+   └── Each client creates own RatingsDataset
+       └── Reads data/federated/client_X/train.parquet (only their users)
+
+3. data_loader_factory.py (called per client)
+   │
+   └── Each client creates own DataLoader
+       └── Local training happens on exclusive user data
+```
 
 ---
 
