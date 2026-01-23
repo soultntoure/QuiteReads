@@ -4,7 +4,6 @@ Loads preprocessed Goodreads data from parquet files and metadata.
 Provides high-level interface for accessing training data and model
 initialization parameters.
 
-Adapted from research repo: src/data/datamodule.py (RatingsDataModule)
 """
 
 import json
