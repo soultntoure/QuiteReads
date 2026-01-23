@@ -57,6 +57,12 @@ project-notes/06-scratchpad/
 project-notes/01-learnings/2026-01-21-Creating_My_First_Claude_Code_Skill_MEDIUM.md
 data/raw/goodreads_interactions_poetry.json
 
+# Data
 data/raw/
 data/processed/
 data/splits/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
