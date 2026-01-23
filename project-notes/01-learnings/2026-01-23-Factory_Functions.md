@@ -1,5 +1,6 @@
 ## Factory Functions
-![alt text](image-8.png)
+![Factory Functions Introduction](../images/factory_functions_intro.png)
+
 Factory functions are just functions that create and return objects with specific configurations. Think of them like a real factory—you send in some raw materials (parameters), and it gives you back a finished product (object) ready to use.
 
 ### The Coffee Shop Analogy
@@ -277,4 +278,6 @@ Each piece has one clear job. If I want to change how DataLoaders are created (e
 4. **They make change easy** — Want to add a new parameter? Change one function, not 20 calls
 
 My `data_loader_factory.py` is tiny (70 lines), but it saves me from so many potential bugs. Training loaders always shuffle, eval loaders never shuffle, and I never have to think about it. That's the power of a good factory.
-![alt text](image-10.png)
+
+
+![Factory Functions Diagram](../images/factory_functions_diagram.png)

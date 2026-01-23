@@ -1,5 +1,5 @@
 # The I/O vs Computation Difference: The Core Confusion Cleared
-![alt text](image-2.png)
+![I/O vs Computation Diagram](../images/io_vs_computation_diagram.png)
 ## The Simple Distinction
 
 **I/O (Input/Output) = Your program is WAITING for something external**

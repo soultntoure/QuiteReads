@@ -1,6 +1,7 @@
 
 ## FastAPI App & Routing (Core, Not Syntax)
-![alt text](image-5.png)
+
+![FastAPI Routing Core](../images/fastapi_routing_core.png)
 ### The non-negotiable idea
 
 FastAPI is **not** “a file with endpoints”.
@@ -135,7 +136,8 @@ They:
 
 > If removing it changes *which* thing you mean → path
 > If removing it changes *how* you view it → query
-![alt text](image-6.png)
+
+![Path vs Query Parameters](../images/path_vs_query_parameters.png)
 ---
 
 ## Quick checkpoint (one question)

@@ -9,7 +9,8 @@ Imagine you're a chef at a restaurant.
 **Without dependency injection:** You have to grow your own vegetables, raise your own livestock, mill your own flour, and make your own equipment before you can cook anything. You're tightly coupled to every part of the supply chain.
 
 **With dependency injection:** Suppliers deliver ingredients to your kitchen. You just specify what you need (fresh tomatoes, chicken, olive oil), and they arrive ready to use. You can focus on cooking, and if you want to switch from one tomato supplier to another, you just change who delivers—your recipes stay the same.
-![alt text](image-4.png)
+
+![Dependency Injection Restaurant Analogy](../images/dependency_injection_restaurant_analogy.png)
 
 ### Code Example
 

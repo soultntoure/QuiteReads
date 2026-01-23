@@ -1,5 +1,5 @@
 # Creating My First Claude Code Skill
-![alt text](image-7.png)
+![Claude Code Skill Problem](../images/claude_skill_problem.png)
 ## The Problem
 
 I was manually documenting Python modules (like `app/api/schemas/`) and realized I kept following the same structure over and over:
@@ -49,7 +49,7 @@ A full-blown agent built with the Claude Agent SDK that runs independently.
 
 > **Real-world analogy:** Skill = recipe card you keep in the kitchen. Subagent = hiring a full-time chef. I just need a recipe card for my weeknight dinners.
 
-![concise skills vs subagents](image-9.png)
+![Skills vs Subagents Comparison](../images/skills_vs_subagents_comparison.png)
 ---
 
 ## How I Created the Skill

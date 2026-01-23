@@ -261,4 +261,4 @@ ExperimentServiceDep = Annotated[ExperimentService, Depends(get_cached_experimen
 
 ---
 
-![alt text](image-3.png)
+![Type Alias Visualization](../images/type_alias_visualization.png)
