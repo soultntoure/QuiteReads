@@ -2,6 +2,7 @@
 
 Complete guide to data flow from raw Goodreads JSON to PyTorch-ready tensors and federated client partitions.
 
+![Data Flow Diagram](../../../project-notes/images/data_flow_diagram.png)
 ---
 
 ## Table of Contents
@@ -44,170 +45,110 @@ The data pipeline transforms raw Goodreads JSON data into PyTorch-ready tensors 
 | `__init__.py` | - | Exports public API | - | - |
 
 ### File-to-File Data Flow Diagram
-
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                           DATA MODULE FILE ARCHITECTURE                          │
-└─────────────────────────────────────────────────────────────────────────────────┘
-
-                    ┌──────────────────────────────────────┐
-                    │          RAW DATA (External)         │
-                    │  data/raw/goodreads_interactions_    │
-                    │           poetry.json                │
-                    └─────────────────┬────────────────────┘
-                                      │
-                                      │ JSON Lines
-                                      ▼
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                         preprocessing.py                                         │
-│  ═══════════════════════════════════════════════════════════════════════════    │
-│                                                                                  │
-│  Functions:                          Produces:                                   │
-│  ├─ load_raw_interactions()          ├─ data/processed/                         │
-│  ├─ filter_implicit_interactions()   │   ├─ interactions_filtered.parquet       │
-│  ├─ iterative_filter()               │   ├─ interactions_indexed.parquet        │
-│  ├─ create_id_mappings()             │   ├─ user_mapping.json                   │
-│  ├─ apply_id_mappings()              │   ├─ item_mapping.json                   │
-│  ├─ create_train_val_test_split()    │   └─ metadata.json                       │
-│  ├─ compute_statistics()             │                                           │
-│  └─ save_artifacts()                 └─ data/splits/                            │
-│                                          ├─ train.parquet                        │
-│  Entry point:                            ├─ val.parquet                          │
-│  └─ run_preprocessing_pipeline()         └─ test.parquet                        │
-│                                                                                  │
-└─────────────────────────────────────────────────────────────────────────────────┘
-                                      │
-                                      │ Parquet files + JSON mappings
-                                      │
-           ┌──────────────────────────┴──────────────────────────┐
-           │                                                      │
-           ▼                                                      ▼
-┌─────────────────────────────────┐              ┌─────────────────────────────────┐
-│  PATH A: CENTRALIZED TRAINING   │              │  PATH B: FEDERATED TRAINING     │
-└─────────────────────────────────┘              └─────────────────────────────────┘
-           │                                                      │
-           ▼                                                      ▼
-┌─────────────────────────────────┐              ┌─────────────────────────────────┐
-│     dataset_loader.py           │              │       partitioner.py            │
-│  ═══════════════════════════    │              │  ═══════════════════════════    │
-│                                 │              │                                 │
-│  Class: DatasetLoader           │              │  Class: UserPartitioner         │
-│  ├─ load()                      │              │  ├─ partition()                 │
-│  │   Reads:                     │              │  │   Reads:                     │
-│  │   ├─ metadata.json           │              │  │   ├─ train.parquet          │
-│  │   ├─ user_mapping.json       │              │  │   └─ val.parquet            │
-│  │   └─ item_mapping.json       │              │  │                              │
-│  │                              │              │  │   Writes:                    │
-│  ├─ Properties:                 │              │  │   └─ data/federated/         │
-│  │   ├─ n_users (5949)          │              │  │       ├─ partition_config.json
-│  │   ├─ n_items (2856)          │              │  │       ├─ client_0/           │
-│  │   └─ global_mean (4.08)      │              │  │       │   ├─ train.parquet   │
-│  │                              │              │  │       │   └─ val.parquet     │
-│  ├─ get_train_loader()────┐     │              │  │       ├─ client_1/           │
-│  ├─ get_val_loader()──────┤     │              │  │       └─ ...                 │
-│  └─ get_test_loader()─────┤     │              │  │                              │
-│                           │     │              │  ├─ get_client_paths()          │
-└───────────────────────────┼─────┘              │  └─ get_local_user_data()       │
-                            │                    │                                 │
-                            │                    └────────────────┬────────────────┘
-                            │                                     │
-                            ▼                                     ▼
-┌─────────────────────────────────┐              ┌─────────────────────────────────┐
-│     ratings_dataset.py          │              │     ratings_dataset.py          │
-│  ═══════════════════════════    │              │  ═══════════════════════════    │
-│                                 │              │                                 │
-│  Class: RatingsDataset          │              │  (Same class, different data)   │
-│  ├─ __init__(parquet_path)      │              │                                 │
-│  │   Reads: splits/*.parquet    │              │  Reads:                         │
-│  │                              │              │  federated/client_X/*.parquet   │
-│  ├─ __getitem__(idx)            │              │                                 │
-│  │   Returns: (user, item, rat) │              │  Each client gets own dataset   │
-│  │                              │              │  with exclusive users           │
-│  ├─ Properties:                 │              │                                 │
-│  │   ├─ n_users                 │              │                                 │
-│  │   ├─ n_items                 │              │                                 │
-│  │   ├─ rating_mean             │              │                                 │
-│  │   └─ local_users             │              │                                 │
-│  │                              │              │                                 │
-└───────────────────┬─────────────┘              └────────────────┬────────────────┘
-                    │                                             │
-                    │ PyTorch Dataset                             │ PyTorch Dataset
-                    ▼                                             ▼
-┌─────────────────────────────────┐              ┌─────────────────────────────────┐
-│   data_loader_factory.py        │              │   data_loader_factory.py        │
-│  ═══════════════════════════    │              │  ═══════════════════════════    │
-│                                 │              │                                 │
-│  Functions:                     │              │  (Same functions)               │
-│  ├─ create_train_loader()       │              │                                 │
-│  │   • shuffle=True             │              │  Per-client DataLoaders         │
-│  │   • batch_size configurable  │              │  for local training             │
-│  │                              │              │                                 │
-│  └─ create_eval_loader()        │              │                                 │
-│      • shuffle=False            │              │                                 │
-│      • deterministic eval       │              │                                 │
-│                                 │              │                                 │
-└───────────────────┬─────────────┘              └────────────────┬────────────────┘
-                    │                                             │
-                    │ PyTorch DataLoader                          │ PyTorch DataLoader
-                    ▼                                             ▼
-┌─────────────────────────────────┐              ┌─────────────────────────────────┐
-│      TRAINING LOOP              │              │   FEDERATED SIMULATION          │
-│  (External: model training)     │              │  (External: Flower framework)   │
-│                                 │              │                                 │
-│  for users, items, ratings      │              │  Client trains locally          │
-│  in train_loader:               │              │  Server aggregates updates      │
-│      predictions = model(...)   │              │                                 │
-│      loss = criterion(...)      │              │                                 │
-│      loss.backward()            │              │                                 │
-└─────────────────────────────────┘              └─────────────────────────────────┘
+``` mermaid
+flowchart TD
+    Start["<b>RAW DATA (External)</b><br/>data/raw/goodreads_interactions_poetry.json<br/><i>JSON Lines format</i>"]
+    
+    Preprocess["<b>preprocessing.py</b><br/>──────────────────<br/><b>Functions:</b><br/>• load_raw_interactions()<br/>• filter_implicit_interactions()<br/>• iterative_filter()<br/>• create_id_mappings()<br/>• apply_id_mappings()<br/>• create_train_val_test_split()<br/>• compute_statistics()<br/>• save_artifacts()<br/><br/><b>Entry point:</b><br/>run_preprocessing_pipeline()"]
+    
+    ProcessedData["<b>Produces:</b><br/>data/processed/<br/>├─ interactions_filtered.parquet<br/>├─ interactions_indexed.parquet<br/>├─ user_mapping.json<br/>├─ item_mapping.json<br/>└─ metadata.json<br/><br/>data/splits/<br/>├─ train.parquet<br/>├─ val.parquet<br/>└─ test.parquet"]
+    
+    PathA["<b>PATH A:</b><br/>CENTRALIZED TRAINING"]
+    PathB["<b>PATH B:</b><br/>FEDERATED TRAINING"]
+    
+    DatasetLoader["<b>dataset_loader.py</b><br/>──────────────────<br/><b>Class: DatasetLoader</b><br/>• load()<br/>  Reads: metadata.json,<br/>  user_mapping.json,<br/>  item_mapping.json<br/><br/><b>Properties:</b><br/>• n_users: 5949<br/>• n_items: 2856<br/>• global_mean: 4.08<br/><br/><b>Methods:</b><br/>• get_train_loader()<br/>• get_val_loader()<br/>• get_test_loader()"]
+    
+    Partitioner["<b>partitioner.py</b><br/>──────────────────<br/><b>Class: UserPartitioner</b><br/>• partition()<br/>  Reads: train.parquet, val.parquet<br/><br/>  Writes: data/federated/<br/>  ├─ partition_config.json<br/>  ├─ client_0/<br/>  │   ├─ train.parquet<br/>  │   └─ val.parquet<br/>  ├─ client_1/<br/>  └─ ...<br/><br/><b>Methods:</b><br/>• get_client_paths()<br/>• get_local_user_data()"]
+    
+    RatingsA["<b>ratings_dataset.py</b><br/>──────────────────<br/><b>Class: RatingsDataset</b><br/>• __init__(parquet_path)<br/>  Reads: splits/*.parquet<br/>• __getitem__(idx)<br/>  Returns: (user, item, rating)<br/><br/><b>Properties:</b><br/>• n_users<br/>• n_items<br/>• rating_mean<br/>• local_users"]
+    
+    RatingsB["<b>ratings_dataset.py</b><br/>──────────────────<br/><b>Class: RatingsDataset</b><br/>(Same class, different data)<br/><br/>Reads:<br/>federated/client_X/*.parquet<br/><br/>Each client gets own dataset<br/>with exclusive users"]
+    
+    FactoryA["<b>data_loader_factory.py</b><br/>──────────────────<br/><b>Functions:</b><br/>• create_train_loader()<br/>  - shuffle=True<br/>  - batch_size configurable<br/>• create_eval_loader()<br/>  - shuffle=False<br/>  - deterministic eval"]
+    
+    FactoryB["<b>data_loader_factory.py</b><br/>──────────────────<br/>(Same functions)<br/><br/>Per-client DataLoaders<br/>for local training"]
+    
+    TrainingLoop["<b>TRAINING LOOP</b><br/>(External: model training)<br/>──────────────────<br/>for users, items, ratings<br/>in train_loader:<br/>    predictions = model(...)<br/>    loss = criterion(...)<br/>    loss.backward()"]
+    
+    Federated["<b>FEDERATED SIMULATION</b><br/>(External: Flower framework)<br/>──────────────────<br/>Client trains locally<br/>Server aggregates updates"]
+    
+    Start --> Preprocess
+    Preprocess --> ProcessedData
+    ProcessedData --> PathA
+    ProcessedData --> PathB
+    
+    PathA --> DatasetLoader
+    PathB --> Partitioner
+    
+    DatasetLoader --> RatingsA
+    Partitioner --> RatingsB
+    
+    RatingsA --> FactoryA
+    RatingsB --> FactoryB
+    
+    FactoryA --> TrainingLoop
+    FactoryB --> Federated
+    
+    style Start fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
+    style Preprocess fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    style ProcessedData fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    style PathA fill:#c8e6c9,stroke:#2e7d32,stroke-width:3px
+    style PathB fill:#ffccbc,stroke:#d84315,stroke-width:3px
+    style DatasetLoader fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style Partitioner fill:#ffe0b2,stroke:#e64a19,stroke-width:2px
+    style RatingsA fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style RatingsB fill:#ffe0b2,stroke:#e64a19,stroke-width:2px
+    style FactoryA fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style FactoryB fill:#ffe0b2,stroke:#e64a19,stroke-width:2px
+    style TrainingLoop fill:#c8e6c9,stroke:#1b5e20,stroke-width:2px
+    style Federated fill:#ffab91,stroke:#bf360c,stroke-width:2px
 ```
 
 ### File Interaction Summary
 
-```
-                     ┌─────────────────────────┐
-                     │   preprocessing.py      │
-                     │   (ONE-TIME EXECUTION)  │
-                     └───────────┬─────────────┘
-                                 │
-                     ┌───────────┴───────────┐
-                     │                       │
-                     ▼                       ▼
-          ┌──────────────────┐    ┌──────────────────┐
-          │ data/processed/  │    │   data/splits/   │
-          │ (mappings, meta) │    │ (train/val/test) │
-          └────────┬─────────┘    └────────┬─────────┘
-                   │                       │
-                   ▼                       │
-          ┌──────────────────┐             │
-          │ dataset_loader.py│◄────────────┘
-          │ (loads metadata) │             │
-          └────────┬─────────┘             │
-                   │                       │
-                   │ creates               │
-                   ▼                       ▼
-          ┌──────────────────┐    ┌──────────────────┐
-          │ratings_dataset.py│    │  partitioner.py  │
-          │ (loads parquet)  │    │ (splits by user) │
-          └────────┬─────────┘    └────────┬─────────┘
-                   │                       │
-                   │                       ▼
-                   │              ┌──────────────────┐
-                   │              │ data/federated/  │
-                   │              │  (client dirs)   │
-                   │              └────────┬─────────┘
-                   │                       │
-                   │                       ▼
-                   │              ┌──────────────────┐
-                   │              │ratings_dataset.py│
-                   │              │ (per-client)     │
-                   │              └────────┬─────────┘
-                   │                       │
-                   ▼                       ▼
-          ┌──────────────────────────────────────────┐
-          │         data_loader_factory.py           │
-          │     (wraps datasets with DataLoader)     │
-          └──────────────────────────────────────────┘
+```mermaid 
+                   flowchart TD
+    Preprocess["<b>preprocessing.py</b><br/>(ONE-TIME EXECUTION)"]
+    
+    Processed["<b>data/processed/</b><br/>(mappings, meta)"]
+    Splits["<b>data/splits/</b><br/>(train/val/test)"]
+    
+    Loader["<b>dataset_loader.py</b><br/>(loads metadata)"]
+    
+    RatingsMain["<b>ratings_dataset.py</b><br/>(loads parquet)"]
+    
+    Partitioner["<b>partitioner.py</b><br/>(splits by user)"]
+    
+    Federated["<b>data/federated/</b><br/>(client dirs)"]
+    
+    RatingsClient["<b>ratings_dataset.py</b><br/>(per-client)"]
+    
+    Factory["<b>data_loader_factory.py</b><br/>(wraps datasets with DataLoader)"]
+    
+    Preprocess --> Processed
+    Preprocess --> Splits
+    
+    Processed --> Loader
+    Splits --> Loader
+    Splits --> Partitioner
+    
+    Loader -->|creates| RatingsMain
+    
+    Partitioner --> Federated
+    Federated --> RatingsClient
+    
+    RatingsMain --> Factory
+    RatingsClient --> Factory
+    
+    style Preprocess fill:#fff9c4,stroke:#f57f17,stroke-width:3px
+    style Processed fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
+    style Splits fill:#e1f5ff,stroke:#0288d1,stroke-width:2px
+    style Loader fill:#e8f5e9,stroke:#388e3c,stroke-width:2px
+    style RatingsMain fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px
+    style Partitioner fill:#ffe0b2,stroke:#e64a19,stroke-width:2px
+    style Federated fill:#ffccbc,stroke:#d84315,stroke-width:2px
+    style RatingsClient fill:#ffab91,stroke:#bf360c,stroke-width:2px
+    style Factory fill:#f3e5f5,stroke:#7b1fa2,stroke-width:3px
 ```
 
 ### What Happens After Preprocessing?
@@ -957,81 +898,32 @@ for users, items, ratings in client_loader:
 
 ### Visual: Complete Pipeline
 
-```
-┌─────────────────────────────────────────────────────────────────────────┐
-│ RAW DATA (JSON Lines)                                                   │
-│ ═══════════════════════════════════════════════════════════════════     │
-│ 2.7M interactions, 377K users, 36K items                                │
-│ File: data/raw/goodreads_interactions_poetry.json (~500 MB)             │
-└────────────────────────────────┬────────────────────────────────────────┘
-                                  │
-                                  ▼
-         ┌────────────────────────────────────────┐
-         │  PREPROCESSING (preprocessing.py)      │
-         │  ────────────────────────────────      │
-         │  1. Load JSON Lines                    │
-         │  2. Filter rating=0 (implicit)         │
-         │  3. Iterative filter (min 20)          │
-         │     • Iteration 1: 2.0M → 1.2M         │
-         │     • Iteration 2: 1.2M → 987K         │
-         │     • ...                               │
-         │     • Iteration 7: 229K (CONVERGED)    │
-         │  4. Create ID mappings                 │
-         │     • 5,949 users (string → int)       │
-         │     • 2,856 items (string → int)       │
-         │  5. Random 70/10/20 split (seed=42)    │
-         │  6. Compute statistics (sparsity, etc) │
-         │  7. Save 8 files                       │
-         └──────────────┬─────────────────────────┘
-                        │
-                        ▼
-┌───────────────────────────────────────────────────────────────────────┐
-│ PROCESSED DATA (Parquet + JSON)                                       │
-│ ══════════════════════════════════════════════════════════            │
-│ 228K interactions, 5.9K users, 2.8K items (8.37% retention)          │
-│                                                                        │
-│ data/processed/ (1.4 MB)           data/splits/ (1.1 MB)             │
-│ ├─ interactions_filtered.parquet   ├─ train.parquet (160K, 70%)      │
-│ │  (641 KB, string IDs)            ├─ val.parquet (23K, 10%)         │
-│ ├─ interactions_indexed.parquet    └─ test.parquet (46K, 20%)        │
-│ │  (469 KB, integer IDs)                                             │
-│ ├─ user_mapping.json (243 KB)                                         │
-│ ├─ item_mapping.json (45 KB)                                          │
-│ └─ metadata.json (1 KB)                                               │
-└───────────────┬───────────────────────────────────────────────────────┘
-                │
-                ├─────────────────┬─────────────────────────┐
-                ▼                 ▼                         ▼
-    ┌───────────────────┐ ┌──────────────────┐ ┌──────────────────────┐
-    │ CENTRALIZED PATH  │ │ FEDERATED PATH   │ │  DOMAIN ENTITIES     │
-    │ ═════════════════ │ │ ════════════════ │ │  ════════════════    │
-    │                   │ │                  │ │                      │
-    │ DatasetLoader     │ │ UserPartitioner  │ │ get_domain_dataset() │
-    │       ↓           │ │       ↓          │ │         ↓            │
-    │ • load()          │ │ • Shuffle 5.9K   │ │ Dataset entity       │
-    │ • n_users=5949    │ │   users (seed=42)│ │ • DataFrame with     │
-    │ • n_items=2856    │ │ • Split into 10  │ │   string IDs         │
-    │ • global_mean=4.08│ │   chunks (~595)  │ │ • ID mappings        │
-    │       ↓           │ │       ↓          │ │ • Used by higher     │
-    │ RatingsDataset    │ │ federated/       │ │   application layers │
-    │       ↓           │ │   client_0/      │ │                      │
-    │ • Load parquet    │ │   client_1/      │ │                      │
-    │ • Convert to      │ │   ...            │ │                      │
-    │   tensors         │ │   client_9/      │ │                      │
-    │       ↓           │ │       ↓          │ │                      │
-    │ DataLoader        │ │ Per-client       │ │                      │
-    │       ↓           │ │ RatingsDataset   │ │                      │
-    │ • Batch=1024      │ │       ↓          │ │                      │
-    │ • Shuffle=True    │ │ • Local users    │ │                      │
-    │       ↓           │ │ • Global items   │ │                      │
-    │ Training Loop     │ │       ↓          │ │                      │
-    │       ↓           │ │ Federated        │ │                      │
-    │ • Forward pass    │ │ Simulation       │ │                      │
-    │ • Compute loss    │ │       ↓          │ │                      │
-    │ • Backprop        │ │ • FedAvg         │ │                      │
-    │ • Update weights  │ │ • Aggregate      │ │                      │
-    │                   │ │   item params    │ │                      │
-    └───────────────────┘ └──────────────────┘ └──────────────────────┘
+```mermaid
+flowchart TD
+    Raw["<b>RAW DATA (JSON Lines)</b><br/>═══════════════════════════════════<br/>2.7M interactions, 377K users, 36K items<br/>File: data/raw/goodreads_interactions_poetry.json (~500 MB)"]
+    
+    Preprocess["<b>PREPROCESSING (preprocessing.py)</b><br/>────────────────────────────────────<br/>1. Load JSON Lines<br/>2. Filter rating=0 (implicit)<br/>3. Iterative filter (min 20)<br/>   • Iteration 1: 2.0M → 1.2M<br/>   • Iteration 2: 1.2M → 987K<br/>   • ...<br/>   • Iteration 7: 229K (CONVERGED)<br/>4. Create ID mappings<br/>   • 5,949 users (string → int)<br/>   • 2,856 items (string → int)<br/>5. Random 70/10/20 split (seed=42)<br/>6. Compute statistics (sparsity, etc)<br/>7. Save 8 files"]
+    
+    Processed["<b>PROCESSED DATA (Parquet + JSON)</b><br/>══════════════════════════════════════<br/>228K interactions, 5.9K users, 2.8K items (8.37% retention)<br/><br/>data/processed/ (1.4 MB)<br/>├─ interactions_filtered.parquet (641 KB, string IDs)<br/>├─ interactions_indexed.parquet (469 KB, integer IDs)<br/>├─ user_mapping.json (243 KB)<br/>├─ item_mapping.json (45 KB)<br/>└─ metadata.json (1 KB)<br/><br/>data/splits/ (1.1 MB)<br/>├─ train.parquet (160K, 70%)<br/>├─ val.parquet (23K, 10%)<br/>└─ test.parquet (46K, 20%)"]
+    
+    Centralized["<b>CENTRALIZED PATH</b><br/>═════════════════<br/><br/><b>DatasetLoader</b><br/>• load()<br/>• n_users=5949<br/>• n_items=2856<br/>• global_mean=4.08<br/><br/><b>RatingsDataset</b><br/>• Load parquet<br/>• Convert to tensors<br/><br/><b>DataLoader</b><br/>• Batch=1024<br/>• Shuffle=True<br/><br/><b>Training Loop</b><br/>• Forward pass<br/>• Compute loss<br/>• Backprop<br/>• Update weights"]
+    
+    Federated["<b>FEDERATED PATH</b><br/>════════════════<br/><br/><b>UserPartitioner</b><br/>• Shuffle 5.9K users (seed=42)<br/>• Split into 10 chunks (~595)<br/><br/><b>federated/</b><br/>  client_0/<br/>  client_1/<br/>  ...<br/>  client_9/<br/><br/><b>Per-client RatingsDataset</b><br/>• Local users<br/>• Global items<br/><br/><b>Federated Simulation</b><br/>• FedAvg<br/>• Aggregate item params"]
+    
+    Domain["<b>DOMAIN ENTITIES</b><br/>════════════════<br/><br/><b>get_domain_dataset()</b><br/><br/><b>Dataset entity</b><br/>• DataFrame with string IDs<br/>• ID mappings<br/>• Used by higher<br/>  application layers"]
+    
+    Raw --> Preprocess
+    Preprocess --> Processed
+    Processed --> Centralized
+    Processed --> Federated
+    Processed --> Domain
+    
+    style Raw fill:#e1f5ff,stroke:#0288d1,stroke-width:3px
+    style Preprocess fill:#fff9c4,stroke:#f57f17,stroke-width:3px
+    style Processed fill:#f3e5f5,stroke:#7b1fa2,stroke-width:3px
+    style Centralized fill:#c8e6c9,stroke:#2e7d32,stroke-width:2px
+    style Federated fill:#ffccbc,stroke:#d84315,stroke-width:2px
+    style Domain fill:#e0f2f1,stroke:#00695c,stroke-width:2px
 ```
 
 ---
