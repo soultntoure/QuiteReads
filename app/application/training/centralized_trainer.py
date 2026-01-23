@@ -54,6 +54,7 @@ class LitBiasedMatrixFactorization(pl.LightningModule):
         global_mean: float = 0.0,
         learning_rate: float = 0.01,
         regularization: float = 0.02,
+        metrics_logger: Optional[MetricsLogger] = None,
     ):
         """Initialize the Lightning module.
 
@@ -64,9 +65,10 @@ class LitBiasedMatrixFactorization(pl.LightningModule):
             global_mean: Initial global mean rating.
             learning_rate: Optimizer learning rate.
             regularization: L2 regularization weight.
+            metrics_logger: Optional logger for capturing per-epoch metrics.
         """
         super().__init__()
-        self.save_hyperparameters()
+        self.save_hyperparameters(ignore=["metrics_logger"])
 
         self.model = BiasedMatrixFactorization(
             n_users=n_users,
@@ -78,6 +80,7 @@ class LitBiasedMatrixFactorization(pl.LightningModule):
         self.learning_rate = learning_rate
         self.regularization = regularization
         self.loss_fn = nn.MSELoss()
+        self._metrics_logger = metrics_logger
 
         # Storage for epoch-level metrics (collected during validation)
         self._val_predictions: list[torch.Tensor] = []
@@ -119,6 +122,18 @@ class LitBiasedMatrixFactorization(pl.LightningModule):
         self._val_predictions.append(predictions.detach())
         self._val_targets.append(ratings.detach())
 
+    def on_train_epoch_end(self) -> None:
+        """Log training loss to metrics logger at epoch end."""
+        if self._metrics_logger is None:
+            return
+
+        # Get the logged train_loss from this epoch
+        train_loss = self.trainer.callback_metrics.get("train_loss")
+        if train_loss is not None:
+            self._metrics_logger.log_training(
+                self.current_epoch, float(train_loss)
+            )
+
     def on_validation_epoch_end(self) -> None:
         """Compute and log validation metrics at epoch end."""
         if not self._val_predictions:
@@ -131,6 +146,12 @@ class LitBiasedMatrixFactorization(pl.LightningModule):
 
         self.log("val_rmse", metrics["rmse"], prog_bar=True)
         self.log("val_mae", metrics["mae"], prog_bar=True)
+
+        # Log directly to metrics logger (guaranteed timing)
+        if self._metrics_logger is not None:
+            self._metrics_logger.log_validation(
+                self.current_epoch, metrics["rmse"], metrics["mae"]
+            )
 
         # Clear storage for next epoch
         self._val_predictions.clear()
@@ -270,8 +291,14 @@ class CentralizedTrainer:
         self._model: Optional[LitBiasedMatrixFactorization] = None
         self._metrics_logger: Optional[MetricsLogger] = None
 
-    def _create_model(self) -> LitBiasedMatrixFactorization:
-        """Create and return a new Lightning model instance."""
+    def _create_model(
+        self, metrics_logger: Optional[MetricsLogger] = None
+    ) -> LitBiasedMatrixFactorization:
+        """Create and return a new Lightning model instance.
+
+        Args:
+            metrics_logger: Optional logger for capturing per-epoch metrics.
+        """
         return LitBiasedMatrixFactorization(
             n_users=self.n_users,
             n_items=self.n_items,
@@ -279,28 +306,21 @@ class CentralizedTrainer:
             global_mean=self.global_mean,
             learning_rate=self.config.learning_rate,
             regularization=self.config.regularization,
+            metrics_logger=metrics_logger,
         )
 
-    def _create_trainer(
-        self,
-        metrics_logger: MetricsLogger,
-        accelerator: str = "auto",
-    ) -> pl.Trainer:
+    def _create_trainer(self, accelerator: str = "auto") -> pl.Trainer:
         """Create and configure a PyTorch Lightning Trainer.
 
         Args:
-            metrics_logger: Logger for capturing metrics.
             accelerator: Device accelerator ("auto", "cpu", "gpu").
 
         Returns:
             Configured Lightning Trainer.
         """
-        callbacks = [MetricsLoggingCallback(metrics_logger)]
-
         trainer_kwargs: dict[str, Any] = {
             "max_epochs": self.config.n_epochs,
             "accelerator": accelerator,
-            "callbacks": callbacks,
             "enable_progress_bar": True,
             "enable_model_summary": False,
             "logger": False,  # Disable Lightning's built-in logger
@@ -328,9 +348,9 @@ class CentralizedTrainer:
             TrainingResult with final metrics and trained model.
         """
         self._metrics_logger = MetricsLogger()
-        self._model = self._create_model()
+        self._model = self._create_model(metrics_logger=self._metrics_logger)
 
-        trainer = self._create_trainer(self._metrics_logger, accelerator)
+        trainer = self._create_trainer(accelerator)
 
         start_time = time.time()
         trainer.fit(self._model, train_loader, val_loader)

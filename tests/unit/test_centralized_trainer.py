@@ -52,12 +52,30 @@ def lit_model() -> LitBiasedMatrixFactorization:
 
 @pytest.fixture
 def synthetic_dataset() -> TensorDataset:
-    """Create synthetic rating data for testing."""
-    n_samples = 500
-    user_ids = torch.randint(0, 100, (n_samples,))
-    item_ids = torch.randint(0, 50, (n_samples,))
-    ratings = torch.rand(n_samples) * 4 + 1  # Ratings 1-5
-    return TensorDataset(user_ids, item_ids, ratings)
+    """Create synthetic rating data with structure for testing."""
+    n_samples = 1000  # More samples to help learning
+    n_users = 100
+    n_items = 50
+    n_factors = 5
+    
+    # Create structured data: user_prefs @ item_features
+    # This ensures the model CAN learn the underlying pattern
+    torch.manual_seed(42)  # Ensure reproducibility
+    user_factors = torch.randn(n_users, n_factors)
+    item_factors = torch.randn(n_items, n_factors)
+    
+    # Generate random interactions
+    user_ids = torch.randint(0, n_users, (n_samples,))
+    item_ids = torch.randint(0, n_items, (n_samples,))
+    
+    # Calculate True ratings (dot product) + small noise
+    # We use a simple dot product to match the Matrix Factorization assumption
+    true_ratings = (user_factors[user_ids] * item_factors[item_ids]).sum(dim=1)
+    
+    # Add small amount of noise
+    noisy_ratings = true_ratings + torch.randn(n_samples) * 0.1
+    
+    return TensorDataset(user_ids, item_ids, noisy_ratings.float())
 
 
 @pytest.fixture
@@ -381,9 +399,9 @@ class TestCentralizedTrainer:
         assert "training" in history
         assert "validation" in history
 
-        # Should have at least 1 epoch of data logged
-        assert len(history["training"]) >= 1
-        assert len(history["validation"]) >= 1
+        # Should have 2 epochs worth of data (matching n_epochs=2 in small_config)
+        assert len(history["training"]) == 2
+        assert len(history["validation"]) == 2
 
     def test_evaluate_raises_before_training(
         self,
@@ -538,10 +556,9 @@ class TestTrainerIntegration:
         result = trainer.train(train_loader, val_loader, accelerator="cpu")
 
         rmse_values = result.metrics_logger.get_validation_rmse()
-        # Should have at least some validation metrics
-        assert len(rmse_values) >= 1
+        # Should have exactly 5 validation metrics (one per epoch)
+        assert len(rmse_values) == 5
 
-        # If we have multiple values, check that model doesn't drastically regress
-        if len(rmse_values) > 1:
-            # Allow some tolerance for randomness - model shouldn't get much worse
-            assert rmse_values[-1] <= rmse_values[0] * 1.5
+        # First RMSE should be higher than last (model should improve)
+        # Allow some tolerance for randomness
+        assert rmse_values[-1] <= rmse_values[0] * 1.2  # Should not get much worse
