@@ -28,7 +28,7 @@ class PartitionConfig:
         seed: Random seed for reproducibility (default: 42)
     """
 
-    num_clients: int = 10
+    num_clients: int = 2
     seed: int = 42
 
 
