@@ -204,7 +204,7 @@ class MetricsLoggingCallback(Callback):
 
         if "val_rmse" in metrics:
             rmse = float(metrics["val_rmse"])
-            mae = float(metrics.get("val_mae", 0.0))
+            mae = float(metrics["val_mae"]) if "val_mae" in metrics else None
             self.metrics_logger.log_validation(epoch, rmse, mae)
 
 
