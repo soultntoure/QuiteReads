@@ -54,7 +54,6 @@ class LitBiasedMatrixFactorization(pl.LightningModule):
         global_mean: float = 0.0,
         learning_rate: float = 0.01,
         regularization: float = 0.02,
-        metrics_logger: Optional[MetricsLogger] = None,
     ):
         """Initialize the Lightning module.
 
@@ -65,10 +64,9 @@ class LitBiasedMatrixFactorization(pl.LightningModule):
             global_mean: Initial global mean rating.
             learning_rate: Optimizer learning rate.
             regularization: L2 regularization weight.
-            metrics_logger: Optional logger for capturing per-epoch metrics.
         """
         super().__init__()
-        self.save_hyperparameters(ignore=["metrics_logger"])
+        self.save_hyperparameters()
 
         self.model = BiasedMatrixFactorization(
             n_users=n_users,
@@ -80,11 +78,12 @@ class LitBiasedMatrixFactorization(pl.LightningModule):
         self.learning_rate = learning_rate
         self.regularization = regularization
         self.loss_fn = nn.MSELoss()
-        self._metrics_logger = metrics_logger
 
         # Storage for epoch-level metrics (collected during validation)
         self._val_predictions: list[torch.Tensor] = []
         self._val_targets: list[torch.Tensor] = []
+        # Store last computed metrics for callback to read
+        self._last_epoch_metrics: Optional[dict[str, float]] = None
 
     def forward(self, user_ids: torch.Tensor, item_ids: torch.Tensor) -> torch.Tensor:
         """Forward pass delegates to underlying model."""
@@ -122,18 +121,6 @@ class LitBiasedMatrixFactorization(pl.LightningModule):
         self._val_predictions.append(predictions.detach())
         self._val_targets.append(ratings.detach())
 
-    def on_train_epoch_end(self) -> None:
-        """Log training loss to metrics logger at epoch end."""
-        if self._metrics_logger is None:
-            return
-
-        # Get the logged train_loss from this epoch
-        train_loss = self.trainer.callback_metrics.get("train_loss")
-        if train_loss is not None:
-            self._metrics_logger.log_training(
-                self.current_epoch, float(train_loss)
-            )
-
     def on_validation_epoch_end(self) -> None:
         """Compute and log validation metrics at epoch end."""
         if not self._val_predictions:
@@ -144,14 +131,14 @@ class LitBiasedMatrixFactorization(pl.LightningModule):
 
         metrics = compute_metrics(all_predictions, all_targets)
 
+        # Store for callback to read (guaranteed timing)
+        self._last_epoch_metrics = {
+            "rmse": metrics["rmse"],
+            "mae": metrics["mae"],
+        }
+
         self.log("val_rmse", metrics["rmse"], prog_bar=True)
         self.log("val_mae", metrics["mae"], prog_bar=True)
-
-        # Log directly to metrics logger (guaranteed timing)
-        if self._metrics_logger is not None:
-            self._metrics_logger.log_validation(
-                self.current_epoch, metrics["rmse"], metrics["mae"]
-            )
 
         # Clear storage for next epoch
         self._val_predictions.clear()
@@ -219,13 +206,18 @@ class MetricsLoggingCallback(Callback):
         trainer: pl.Trainer,
         pl_module: pl.LightningModule,
     ) -> None:
-        """Log validation metrics at epoch end."""
-        metrics = trainer.callback_metrics
+        """Log validation metrics at epoch end.
+
+        Reads directly from pl_module._last_epoch_metrics which is set
+        by LitBiasedMatrixFactorization.on_validation_epoch_end before
+        this callback runs, guaranteeing metrics availability.
+        """
         epoch = trainer.current_epoch
 
-        if "val_rmse" in metrics:
-            rmse = float(metrics["val_rmse"])
-            mae = float(metrics["val_mae"]) if "val_mae" in metrics else None
+        # Read from module's stored metrics (guaranteed to exist after module hook)
+        if hasattr(pl_module, "_last_epoch_metrics") and pl_module._last_epoch_metrics:
+            rmse = float(pl_module._last_epoch_metrics["rmse"])
+            mae = float(pl_module._last_epoch_metrics["mae"])
             self.metrics_logger.log_validation(epoch, rmse, mae)
 
 
@@ -291,14 +283,8 @@ class CentralizedTrainer:
         self._model: Optional[LitBiasedMatrixFactorization] = None
         self._metrics_logger: Optional[MetricsLogger] = None
 
-    def _create_model(
-        self, metrics_logger: Optional[MetricsLogger] = None
-    ) -> LitBiasedMatrixFactorization:
-        """Create and return a new Lightning model instance.
-
-        Args:
-            metrics_logger: Optional logger for capturing per-epoch metrics.
-        """
+    def _create_model(self) -> LitBiasedMatrixFactorization:
+        """Create and return a new Lightning model instance."""
         return LitBiasedMatrixFactorization(
             n_users=self.n_users,
             n_items=self.n_items,
@@ -306,21 +292,28 @@ class CentralizedTrainer:
             global_mean=self.global_mean,
             learning_rate=self.config.learning_rate,
             regularization=self.config.regularization,
-            metrics_logger=metrics_logger,
         )
 
-    def _create_trainer(self, accelerator: str = "auto") -> pl.Trainer:
+    def _create_trainer(
+        self,
+        metrics_logger: MetricsLogger,
+        accelerator: str = "auto",
+    ) -> pl.Trainer:
         """Create and configure a PyTorch Lightning Trainer.
 
         Args:
+            metrics_logger: Logger for capturing metrics via callback.
             accelerator: Device accelerator ("auto", "cpu", "gpu").
 
         Returns:
             Configured Lightning Trainer.
         """
+        callbacks = [MetricsLoggingCallback(metrics_logger)]
+
         trainer_kwargs: dict[str, Any] = {
             "max_epochs": self.config.n_epochs,
             "accelerator": accelerator,
+            "callbacks": callbacks,
             "enable_progress_bar": True,
             "enable_model_summary": False,
             "logger": False,  # Disable Lightning's built-in logger
@@ -348,9 +341,9 @@ class CentralizedTrainer:
             TrainingResult with final metrics and trained model.
         """
         self._metrics_logger = MetricsLogger()
-        self._model = self._create_model(metrics_logger=self._metrics_logger)
+        self._model = self._create_model()
 
-        trainer = self._create_trainer(accelerator)
+        trainer = self._create_trainer(self._metrics_logger, accelerator)
 
         start_time = time.time()
         trainer.fit(self._model, train_loader, val_loader)

@@ -265,12 +265,11 @@ class TestMetricsLoggingCallback:
 
         class MockTrainer:
             current_epoch = 0
-            callback_metrics = {
-                "val_rmse": torch.tensor(0.85),
-                "val_mae": torch.tensor(0.65),
-            }
 
-        callback.on_validation_epoch_end(MockTrainer(), None)
+        class MockModule:
+            _last_epoch_metrics = {"rmse": 0.85, "mae": 0.65}
+
+        callback.on_validation_epoch_end(MockTrainer(), MockModule())
 
         rmse_values = metrics_logger.get_validation_rmse()
         mae_values = metrics_logger.get_validation_mae()
@@ -289,9 +288,12 @@ class TestMetricsLoggingCallback:
             current_epoch = 0
             callback_metrics = {}  # No metrics
 
+        class MockModuleNoMetrics:
+            _last_epoch_metrics = None  # No metrics
+
         # Should not raise
         callback.on_train_epoch_end(MockTrainer(), None)
-        callback.on_validation_epoch_end(MockTrainer(), None)
+        callback.on_validation_epoch_end(MockTrainer(), MockModuleNoMetrics())
 
         assert metrics_logger.num_epochs == 0
 
