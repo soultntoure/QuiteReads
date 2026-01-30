@@ -68,7 +68,10 @@ class ExperimentManager:
         self._data_loader: Optional[DatasetLoader] = None
 
     def _ensure_data_loaded(self) -> DatasetLoader:
-        """Ensure data is loaded and return the DatasetLoader."""
+        """Ensure data is loaded and return the DatasetLoader.
+        Why?:  Loading data can be expensive (reading CSV files, computing statistics). 
+        If an ExperimentManager is created but no experiments are run, no data is loaded.
+        """
         if self._data_loader is None:
             self._data_loader = DatasetLoader(self._data_dir)
             self._data_loader.load()
