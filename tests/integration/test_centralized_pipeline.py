@@ -168,17 +168,25 @@ class TestCentralizedTrainingPipeline:
         # Query database directly to verify persistence
         persisted_metrics = await metrics_repo.get_by_experiment(result.experiment_id)
 
-        # Should have metrics for each epoch
-        assert len(persisted_metrics) > 0, "No metrics were persisted to database"
+        # 2 epochs × 3 metric types (loss, rmse, mae) = 6 metrics
+        assert len(persisted_metrics) == 6, (
+            f"Expected 6 persisted metrics (2 epochs × 3 types), got {len(persisted_metrics)}"
+        )
 
-        # Verify metric types
+        # Verify all three metric types are persisted
         metric_names = {m.name for m in persisted_metrics}
         assert "loss" in metric_names, "Training loss not persisted"
         assert "rmse" in metric_names, "Validation RMSE not persisted"
+        assert "mae" in metric_names, "Validation MAE not persisted"
 
-        # Verify metrics have round numbers (epochs)
+        # Verify metrics have correct epoch round numbers (0 and 1)
         rounds = {m.round_number for m in persisted_metrics if m.round_number is not None}
-        assert 0 in rounds or 1 in rounds, "Epoch metrics not recorded with round numbers"
+        assert rounds == {0, 1}, f"Expected epoch rounds {{0, 1}}, got {rounds}"
+
+        # Verify all metric values are valid (positive, not NaN)
+        for m in persisted_metrics:
+            assert m.value > 0, f"Metric {m.name} at epoch {m.round_number} has invalid value: {m.value}"
+            assert m.value == m.value, f"Metric {m.name} at epoch {m.round_number} is NaN"
 
     @pytest.mark.asyncio
     async def test_experiment_lifecycle_transitions_correctly(
@@ -266,3 +274,46 @@ class TestCentralizedTrainingPipeline:
 
         assert len(failed_experiments) == 1
         assert failed_experiments[0].name == "Failure Test"
+
+    @pytest.mark.asyncio
+    async def test_persisted_metrics_retrievable_in_epoch_order(
+        self,
+        experiment_manager: ExperimentManager,
+        metrics_repo: MetricsRepository,
+        synthetic_data_loader: MagicMock,
+    ) -> None:
+        """Persisted metrics can be retrieved and are ordered by epoch.
+
+        Verifies the frontend can fetch convergence data for plotting.
+        """
+        config = Configuration(n_factors=8, n_epochs=3, learning_rate=0.01)
+
+        with patch.object(
+            experiment_manager, "_ensure_data_loaded", return_value=synthetic_data_loader
+        ):
+            result = await experiment_manager.run_centralized_experiment(
+                name="Retrieval Test",
+                config=config,
+                accelerator="cpu",
+            )
+
+        # Retrieve metrics from database (same path the API route would use)
+        persisted = await metrics_repo.get_by_experiment(result.experiment_id)
+
+        # Group by metric name
+        by_name: dict[str, list] = {}
+        for m in persisted:
+            by_name.setdefault(m.name, []).append(m)
+
+        # Each metric type should have exactly 3 entries (one per epoch)
+        for name in ("loss", "rmse", "mae"):
+            assert name in by_name, f"Metric '{name}' missing from persisted data"
+            assert len(by_name[name]) == 3, (
+                f"Expected 3 epochs for '{name}', got {len(by_name[name])}"
+            )
+
+            # Verify epochs are contiguous 0, 1, 2
+            epochs = sorted(m.round_number for m in by_name[name])
+            assert epochs == [0, 1, 2], (
+                f"Expected contiguous epochs [0, 1, 2] for '{name}', got {epochs}"
+            )
