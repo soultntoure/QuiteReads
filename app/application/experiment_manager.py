@@ -157,6 +157,21 @@ class ExperimentManager:
             await self._experiment_service.fail_experiment(experiment_id)
             raise
 
+    async def run_federated_experiment(
+        self,
+        name: str,
+        config: Configuration,
+    ) -> None:
+        """Run a complete federated training experiment.
+
+        Note: This is currently a placeholder for future implementation.
+
+        Args:
+            name: Human-readable experiment name.
+            config: Experiment configuration.
+        """
+        raise NotImplementedError("Federated simulation is not yet implemented.")
+
     async def _persist_training_metrics(
         self,
         experiment_id: str,
