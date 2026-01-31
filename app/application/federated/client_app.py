@@ -26,8 +26,9 @@ import torch
 from flwr.app import ArrayRecord, Context, Message, MetricRecord, RecordDict
 from flwr.clientapp import ClientApp
 
+from app.application.data import ClientDataModule, load_partition_config
 from app.application.training.centralized_trainer import LitBiasedMatrixFactorization
-from src.data.federated_datamodule import ClientDataModule, load_partition_config
+
 
 
 # Parameter names for filtering (matches strategy.py expectations)
