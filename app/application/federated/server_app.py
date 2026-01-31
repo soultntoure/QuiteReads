@@ -32,7 +32,9 @@ from flwr.common.logger import log
 from flwr.serverapp import Grid, ServerApp
 
 from app.application.data import DatasetLoader
+from app.application.federated import ITEM_PARAM_NAMES
 from app.application.federated.strategy import FedAvgItemsOnly
+from app.application.reporting.metrics_calculator import compute_metrics
 from app.application.training.centralized_trainer import LitBiasedMatrixFactorization
 
 
@@ -247,9 +249,6 @@ def _create_centralized_evaluate_fn(
     loader.load()
     test_loader = loader.get_test_loader(batch_size=2048, num_workers=0)
 
-    # Item parameter names (what we receive from aggregation)
-    item_param_names = {"global_bias", "item_bias.weight", "item_embedding.weight"}
-
     def evaluate_fn(server_round: int, arrays: ArrayRecord) -> Optional[MetricRecord]:
         """Evaluate global model on centralized test set.
 
@@ -279,13 +278,13 @@ def _create_centralized_evaluate_fn(
         # Merge with fresh user embeddings (access inner model's state_dict)
         current_state = lit_model.model.state_dict()
         for name, param in aggregated_state.items():
-            if name in item_param_names and name in current_state:
+            if name in ITEM_PARAM_NAMES and name in current_state:
                 current_state[name] = param.to(device)
         lit_model.model.load_state_dict(current_state)
 
         # Freeze item parameters, only train user embeddings
         for name, param in lit_model.model.named_parameters():
-            if name in item_param_names:
+            if name in ITEM_PARAM_NAMES:
                 param.requires_grad = False
             else:
                 param.requires_grad = True
@@ -317,9 +316,8 @@ def _create_centralized_evaluate_fn(
 
         # Evaluate on test set
         lit_model.eval()
-        total_se = 0.0
-        total_ae = 0.0
-        total_samples = 0
+        all_preds = []
+        all_ratings = []
 
         with torch.no_grad():
             for users, items, ratings in test_loader:
@@ -329,13 +327,19 @@ def _create_centralized_evaluate_fn(
                     ratings.to(device),
                 )
                 preds = lit_model(users, items)
-                total_se += ((preds - ratings) ** 2).sum().item()
-                total_ae += torch.abs(preds - ratings).sum().item()
-                total_samples += len(ratings)
+                all_preds.append(preds.cpu())
+                all_ratings.append(ratings.cpu())
 
-        test_rmse = (total_se / total_samples) ** 0.5
-        test_mae = total_ae / total_samples
-        test_loss = total_se / total_samples
+        # Concatenate all predictions and ratings
+        all_preds = torch.cat(all_preds)
+        all_ratings = torch.cat(all_ratings)
+        total_samples = len(all_ratings)
+
+        # Use compute_metrics from reporting module
+        metrics_dict = compute_metrics(all_preds, all_ratings)
+        test_rmse = metrics_dict["rmse"]
+        test_mae = metrics_dict["mae"]
+        test_loss = test_rmse ** 2  # MSE for loss
 
         log(
             INFO,
@@ -387,11 +391,10 @@ def _initialize_global_model(
     )
 
     # Extract only item-side parameters from inner model
-    item_param_names = {"global_bias", "item_bias.weight", "item_embedding.weight"}
     item_state = OrderedDict({
         name: param.clone()
         for name, param in lit_model.model.state_dict().items()
-        if name in item_param_names
+        if name in ITEM_PARAM_NAMES
     })
 
     log(

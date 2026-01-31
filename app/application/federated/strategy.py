@@ -15,6 +15,9 @@ from flwr.app import ArrayRecord, Message, MetricRecord
 from flwr.common.logger import log
 from flwr.serverapp.strategy import FedAvg
 
+from app.application.federated import ITEM_PARAM_NAMES
+
+
 
 class FedAvgItemsOnly(FedAvg):
     """Federated Averaging strategy that aggregates only item-side parameters.
@@ -86,16 +89,13 @@ class FedAvgItemsOnly(FedAvg):
 
         Args:
             item_param_names: Names of item-side parameters to aggregate.
-                Default: ["global_bias", "item_bias.weight", "item_embedding.weight"]
+                Default: Uses ITEM_PARAM_NAMES constant from federated module
             **kwargs: Arguments passed to FedAvg (including weighted_by_key,
                 train_metrics_aggr_fn, fraction_fit, min_fit_clients, etc.)
         """
         # Configurable parameter names for name-based filtering
-        self.item_param_names = item_param_names or [
-            "global_bias",
-            "item_bias.weight",
-            "item_embedding.weight",
-        ]
+        self.item_param_names = item_param_names or list(ITEM_PARAM_NAMES)
+
 
         # Extract and map custom terminology to FedAvg expected arguments
         # We store weighted_by_key for use in aggregate_train

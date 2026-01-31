@@ -27,17 +27,14 @@ from flwr.app import ArrayRecord, Context, Message, MetricRecord, RecordDict
 from flwr.clientapp import ClientApp
 
 from app.application.data import ClientDataModule, load_partition_config
+from app.application.federated import ITEM_PARAM_NAMES
 from app.application.training.centralized_trainer import LitBiasedMatrixFactorization
-
 
 
 # Parameter names for filtering (matches strategy.py expectations)
 # We access lit_model.model.state_dict() to get these names without "model." prefix
-ITEM_PARAM_NAMES = frozenset({
-    "global_bias",
-    "item_bias.weight",
-    "item_embedding.weight",
-})  # Sent to server for aggregation
+# ITEM_PARAM_NAMES is imported from federated module - sent to server for aggregation
+
 
 USER_PARAM_NAMES = frozenset({
     "user_bias.weight",
