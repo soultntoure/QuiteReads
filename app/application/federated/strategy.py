@@ -58,7 +58,7 @@ class FedAvgItemsOnly(FedAvg):
     ## Usage Example
 
     ```python
-    from src.federated.strategy import FedAvgItemsOnly
+    from app.application.federated.strategy import FedAvgItemsOnly
 
     # Default: aggregates the three item-side parameters
     strategy = FedAvgItemsOnly(
