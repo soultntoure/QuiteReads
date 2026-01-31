@@ -16,6 +16,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from app.application.data.partitioner import PartitionConfig, UserPartitioner
+from app.utils.exceptions import FederatedSimulationError
 
 
 @dataclass
@@ -421,12 +422,20 @@ class FederatedSimulationManager:
                         best_mae = client_mae if client_mae is not None else 0.0
                         best_round = round_data.get("round", 0)
         
-        # 6. Return result
+        # 6. Validate that metrics were produced
+        if final_rmse == float("inf"):
+            raise FederatedSimulationError(
+                "No evaluation metrics were produced during federated simulation. "
+                "Either enable centralized evaluation (enable_centralized_eval=True) "
+                "or ensure clients have validation data for distributed evaluation."
+            )
+        
+        # 7. Return result
         return FederatedSimulationResult(
-            final_rmse=final_rmse if final_rmse != float("inf") else 0.0,
-            final_mae=final_mae if final_mae != float("inf") else 0.0,
-            best_rmse=best_rmse if best_rmse != float("inf") else 0.0,
-            best_mae=best_mae if best_mae != float("inf") else 0.0,
+            final_rmse=final_rmse,
+            final_mae=final_mae,
+            best_rmse=best_rmse,
+            best_mae=best_mae,
             best_round=best_round,
             training_time_seconds=training_time,
             num_rounds=num_rounds,
