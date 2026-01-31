@@ -20,7 +20,6 @@ Usage:
 
 import json
 from collections import OrderedDict
-from datetime import datetime
 from logging import INFO
 from pathlib import Path
 from typing import Any, Optional
@@ -36,82 +35,8 @@ from app.application.data import DatasetLoader
 from app.application.federated.strategy import FedAvgItemsOnly
 from app.application.training.centralized_trainer import LitBiasedMatrixFactorization
 
-# TensorBoard import (optional - gracefully handle if not available)
-try:
-    from torch.utils.tensorboard import SummaryWriter
-    TENSORBOARD_AVAILABLE = True
-except ImportError:
-    TENSORBOARD_AVAILABLE = False
-    SummaryWriter = None
-
 
 app = ServerApp()
-
-
-def _create_tensorboard_writer(output_dir: Path) -> Optional["SummaryWriter"]:
-    """Create TensorBoard SummaryWriter if available.
-
-    Args:
-        output_dir: Directory to save TensorBoard logs
-
-    Returns:
-        SummaryWriter instance or None if TensorBoard is not available
-    """
-    if not TENSORBOARD_AVAILABLE:
-        log(INFO, "TensorBoard not available - skipping TensorBoard logging")
-        return None
-
-    log_dir = output_dir / "tensorboard" / datetime.now().strftime("%Y%m%d_%H%M%S")
-    log_dir.mkdir(parents=True, exist_ok=True)
-    log(INFO, "TensorBoard logging enabled: %s", log_dir)
-    return SummaryWriter(log_dir=str(log_dir))
-
-
-def _log_round_metrics_to_tensorboard(
-    writer: Optional["SummaryWriter"],
-    round_num: int,
-    train_metrics: Optional[dict] = None,
-    eval_metrics: Optional[dict] = None,
-    centralized_metrics: Optional[dict] = None,
-) -> None:
-    """Log metrics for a round to TensorBoard.
-
-    Args:
-        writer: TensorBoard SummaryWriter (or None to skip)
-        round_num: Current federated round number
-        train_metrics: Training metrics from clients
-        eval_metrics: Evaluation metrics from clients
-        centralized_metrics: Centralized evaluation metrics from server
-    """
-    if writer is None:
-        return
-
-    # Log training metrics
-    if train_metrics:
-        if "agg_loss" in train_metrics:
-            writer.add_scalar("train/loss", train_metrics["agg_loss"], round_num)
-        if "total_examples" in train_metrics:
-            writer.add_scalar("train/total_examples", train_metrics["total_examples"], round_num)
-
-    # Log client evaluation metrics
-    if eval_metrics:
-        if "agg_rmse" in eval_metrics:
-            writer.add_scalar("eval/client_rmse", eval_metrics["agg_rmse"], round_num)
-        if "agg_mae" in eval_metrics:
-            writer.add_scalar("eval/client_mae", eval_metrics["agg_mae"], round_num)
-        if "agg_loss" in eval_metrics:
-            writer.add_scalar("eval/client_loss", eval_metrics["agg_loss"], round_num)
-
-    # Log centralized evaluation metrics
-    if centralized_metrics:
-        if "test_rmse" in centralized_metrics:
-            writer.add_scalar("eval/centralized_rmse", centralized_metrics["test_rmse"], round_num)
-        if "test_mae" in centralized_metrics:
-            writer.add_scalar("eval/centralized_mae", centralized_metrics["test_mae"], round_num)
-        if "test_loss" in centralized_metrics:
-            writer.add_scalar("eval/centralized_loss", centralized_metrics["test_loss"], round_num)
-
-    writer.flush()
 
 
 def _save_final_metrics(
@@ -491,7 +416,7 @@ def main(grid: Grid, context: Context) -> None:
     3. Configure FedAvgItemsOnly strategy
     4. Set up centralized evaluation
     5. Run federated rounds
-    6. Log metrics to TensorBoard
+    6. Save metrics to JSON
 
     Args:
         grid: Flower Grid for node communication
@@ -509,7 +434,7 @@ def main(grid: Grid, context: Context) -> None:
         - centralized-eval: Enable centralized evaluation (default: True)
         - user-lr: Learning rate for user embedding in centralized eval (default: 0.1)
         - user-epochs: Epochs for user embedding in centralized eval (default: 3)
-        - output-dir: Directory for saving results and TensorBoard logs (default: "results/federated")
+        - output-dir: Directory for saving results (default: "results/federated")
     """
     # Read configuration
     data_dir = Path(context.run_config.get("data-dir", "data"))
@@ -590,9 +515,6 @@ def main(grid: Grid, context: Context) -> None:
     log(INFO, "  Item parameters: %s", strategy.item_param_names)
     log(INFO, "=" * 60)
 
-    # Create TensorBoard writer
-    tb_writer = _create_tensorboard_writer(output_dir)
-
     # Start federated learning
     result = strategy.start(
         grid=grid,
@@ -623,28 +545,6 @@ def main(grid: Grid, context: Context) -> None:
         log(INFO, "Centralized evaluation metrics (server-side):")
         for round_num, metrics in result.evaluate_metrics_serverapp.items():
             log(INFO, "  Round %d: %s", round_num, dict(metrics))
-
-    # Log all rounds to TensorBoard
-    for round_num in range(1, num_rounds + 1):
-        train_metrics = None
-        eval_metrics = None
-        centralized_metrics = None
-
-        if result.train_metrics_clientapp and round_num in result.train_metrics_clientapp:
-            train_metrics = dict(result.train_metrics_clientapp[round_num])
-        if result.evaluate_metrics_clientapp and round_num in result.evaluate_metrics_clientapp:
-            eval_metrics = dict(result.evaluate_metrics_clientapp[round_num])
-        if result.evaluate_metrics_serverapp and round_num in result.evaluate_metrics_serverapp:
-            centralized_metrics = dict(result.evaluate_metrics_serverapp[round_num])
-
-        _log_round_metrics_to_tensorboard(
-            tb_writer, round_num, train_metrics, eval_metrics, centralized_metrics
-        )
-
-    # Close TensorBoard writer
-    if tb_writer is not None:
-        tb_writer.close()
-        log(INFO, "TensorBoard logs saved to: %s/tensorboard/", output_dir)
 
     # Save final metrics to JSON
     _save_final_metrics(
