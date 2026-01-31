@@ -4,7 +4,6 @@ Partitions Goodreads dataset by user_id for cross-silo federated learning
 simulation. Each client receives an exclusive set of users while sharing
 the global item catalog.
 
-Adapted from research repo: src/federated/partitioner.py
 """
 
 import json
