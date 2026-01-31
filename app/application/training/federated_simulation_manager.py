@@ -154,6 +154,7 @@ class FederatedSimulationManager:
         learning_rate: float = 0.02,
         regularization: float = 0.005,
         local_epochs: int = 5,
+        batch_size: int = 1024,
         fraction_train: float = 1.0,
         fraction_evaluate: float = 1.0,
         enable_centralized_eval: bool = True,
@@ -172,6 +173,7 @@ class FederatedSimulationManager:
             learning_rate: Client-side learning rate.
             regularization: L2 regularization weight.
             local_epochs: Epochs per client per round.
+            batch_size: Batch size for client DataLoaders.
             fraction_train: Fraction of clients selected for training.
             fraction_evaluate: Fraction of clients for evaluation.
             enable_centralized_eval: Whether to run server-side test eval.
@@ -193,6 +195,7 @@ class FederatedSimulationManager:
             "learning-rate": learning_rate,
             "regularization": regularization,
             "local-epochs": local_epochs,
+            "batch-size": batch_size,
             
             # Client selection
             "fraction-train": fraction_train,
@@ -325,6 +328,7 @@ class FederatedSimulationManager:
         learning_rate: float = 0.02,
         regularization: float = 0.005,
         local_epochs: int = 5,
+        batch_size: int = 1024,
         fraction_train: float = 1.0,
         fraction_evaluate: float = 1.0,
         enable_centralized_eval: bool = True,
@@ -343,6 +347,7 @@ class FederatedSimulationManager:
             learning_rate: Client-side optimizer learning rate.
             regularization: L2 regularization weight.
             local_epochs: Training epochs per client per round.
+            batch_size: Batch size for client DataLoaders.
             fraction_train: Fraction of clients selected for training.
             fraction_evaluate: Fraction of clients for evaluation.
             enable_centralized_eval: Enable server-side test set evaluation.
@@ -370,6 +375,7 @@ class FederatedSimulationManager:
             learning_rate=learning_rate,
             regularization=regularization,
             local_epochs=local_epochs,
+            batch_size=batch_size,
             fraction_train=fraction_train,
             fraction_evaluate=fraction_evaluate,
             enable_centralized_eval=enable_centralized_eval,

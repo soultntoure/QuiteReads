@@ -237,6 +237,7 @@ class ExperimentManager:
                 learning_rate=config.learning_rate,
                 regularization=config.regularization,
                 local_epochs=local_epochs,
+                batch_size=self._batch_size,
                 fraction_train=fraction_train,
                 fraction_evaluate=fraction_evaluate,
                 enable_centralized_eval=True,
