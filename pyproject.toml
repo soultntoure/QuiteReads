@@ -5,6 +5,7 @@ version = "0.1.0"
 description = "FYP Dashboard: Federated Learning Book Recommender"
 requires-python = ">=3.12"
 dependencies = [
+    "flwr==1.25.0",
     "pyarrow>=23.0.0",
 ]
 

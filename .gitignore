@@ -58,6 +58,4 @@ project-notes/01-learnings/2026-01-21-Creating_My_First_Claude_Code_Skill_MEDIUM
 data/raw/goodreads_interactions_poetry.json
 
 # Data
-data/raw/
-data/processed/
-data/splits/
+data/*

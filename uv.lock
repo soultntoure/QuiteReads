@@ -684,6 +684,7 @@ name = "fedrec-dashboard"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
+    { name = "flwr" },
     { name = "pyarrow" },
 ]
 
@@ -714,7 +715,10 @@ dev = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "pyarrow", specifier = ">=23.0.0" }]
+requires-dist = [
+    { name = "flwr", specifier = "==1.25.0" },
+    { name = "pyarrow", specifier = ">=23.0.0" },
+]
 
 [package.metadata.requires-dev]
 dev = [
@@ -753,7 +757,7 @@ wheels = [
 
 [[package]]
 name = "flwr"
-version = "1.24.0"
+version = "1.25.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -772,9 +776,9 @@ dependencies = [
     { name = "tomli-w" },
     { name = "typer" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/b2/ad/aca544e5e0a7eb51826a8c3374a6bedf3668f63c5fcff00b623dd8f29f7c/flwr-1.24.0.tar.gz", hash = "sha256:fe5eba73deb0421b9c1719574f84b90c3d1492aa448225db0cb32137416da269", size = 428505, upload-time = "2025-11-30T16:04:43.764Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/96/d9/22d6fa89d3a1be02622d1f6fbbac08a3ffd9bc6b439228f69780aae55b41/flwr-1.25.0.tar.gz", hash = "sha256:fe5c9efd4ade6529583deb2927cadc5a6f3b15524e4c1fdc2521c3f24c80ebb8", size = 401311, upload-time = "2025-12-16T09:47:10.97Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/be/8a/380b6484cce17cd83398f3b52d34c6f660a7013c9719933827e2db3d1e31/flwr-1.24.0-py3-none-any.whl", hash = "sha256:6331df132d5d9b488dd5276cfff92f61e7217eea566815b3f0b16bf132dc0909", size = 787936, upload-time = "2025-11-30T16:04:42.303Z" },
+    { url = "https://files.pythonhosted.org/packages/08/6a/5d49b9f294a548151c5b0af91b928e4c51a265d32026e8635994d6d647c4/flwr-1.25.0-py3-none-any.whl", hash = "sha256:997817e63a8317e61909345d9cea6c2b02f10ea33f9c67605290e6ec2b399d38", size = 727058, upload-time = "2025-12-16T09:47:08.419Z" },
 ]
 
 [package.optional-dependencies]
