@@ -15,7 +15,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-from app.application.data import DatasetLoader
 from app.application.data.partitioner import PartitionConfig, UserPartitioner
 
 
@@ -108,14 +107,6 @@ class FederatedSimulationManager:
         
         # Lazily initialized
         self._partition_result: Optional[Any] = None
-        self._data_loader: Optional[DatasetLoader] = None
-    
-    def _ensure_data_loaded(self) -> DatasetLoader:
-        """Ensure data is loaded and return the DatasetLoader."""
-        if self._data_loader is None:
-            self._data_loader = DatasetLoader(self.data_dir)
-            self._data_loader.load()
-        return self._data_loader
     
     def _partition_data(self, force: bool = False) -> Path:
         """Partition dataset for federated clients.
@@ -228,18 +219,15 @@ class FederatedSimulationManager:
             run_config: Configuration dictionary for the simulation.
             
         Returns:
-            FedAvgResult from strategy.start() containing all metrics.
+            History object from run_simulation() containing metrics_centralized,
+            metrics_distributed, and losses_distributed as lists of (round, value) tuples.
         """
         from flwr.simulation import run_simulation
         
         from app.application.federated.client_app import app as client_app
         from app.application.federated.server_app import app as server_app
         
-        # Run simulation
-        # Note: run_simulation returns a History object, but our server_app.main()
-        # uses strategy.start() which returns FedAvgResult with richer metrics
-        # We need to capture the result from server_app directly
-        
+        # Run simulation and return History object
         history = run_simulation(
             server_app=server_app,
             client_app=client_app,
@@ -260,92 +248,72 @@ class FederatedSimulationManager:
         result: Any,
         num_rounds: int,
     ) -> List[Dict[str, Any]]:
-        """Extract per-round metrics from Flower result.
+        """Extract per-round metrics from Flower History object.
         
-        Converts Flower's result dictionaries into a list of dicts
-        keyed by round number, suitable for database persistence.
+        Converts Flower's History object (returned by run_simulation) into a list
+        of per-round metric dictionaries suitable for database persistence.
+        
+        Note: run_simulation() returns a History object, NOT the FedAvgResult
+        from strategy.start(). The FedAvgResult with richer metrics is internal
+        to server_app.main() and doesn't propagate out. For access to those
+        metrics, read the final_metrics.json file saved by server_app.py.
         
         Args:
-            result: FedAvgResult from strategy.start() or History from run_simulation.
+            result: History object from run_simulation().
             num_rounds: Number of rounds completed.
             
         Returns:
             List of dictionaries with per-round metrics:
                 - round: Round number (1-indexed)
-                - test_rmse: Centralized test RMSE
-                - test_mae: Centralized test MAE
-                - client_eval_rmse: Aggregated client validation RMSE
-                - client_eval_mae: Aggregated client validation MAE
-                - train_loss: Aggregated training loss
+                - test_rmse: Centralized test RMSE (if available)
+                - test_mae: Centralized test MAE (if available)
+                - client_eval_rmse: Aggregated client validation RMSE (if available)
+                - client_eval_mae: Aggregated client validation MAE (if available)
+                - train_loss: Aggregated training loss (if available)
         """
         metrics_by_round = []
         
-        # Handle both FedAvgResult (from strategy.start) and History (from run_simulation)
-        if hasattr(result, 'evaluate_metrics_serverapp'):
-            # FedAvgResult from strategy.start()
-            for round_num in range(1, num_rounds + 1):
-                round_metrics = {"round": round_num}
-                
-                # Centralized evaluation metrics
-                if result.evaluate_metrics_serverapp and round_num in result.evaluate_metrics_serverapp:
-                    server_metrics = dict(result.evaluate_metrics_serverapp[round_num])
-                    round_metrics["test_rmse"] = server_metrics.get("test_rmse")
-                    round_metrics["test_mae"] = server_metrics.get("test_mae")
-                    round_metrics["test_loss"] = server_metrics.get("test_loss")
-                
-                # Client-side evaluation metrics
-                if result.evaluate_metrics_clientapp and round_num in result.evaluate_metrics_clientapp:
-                    client_eval = dict(result.evaluate_metrics_clientapp[round_num])
-                    round_metrics["client_eval_rmse"] = client_eval.get("agg_rmse")
-                    round_metrics["client_eval_mae"] = client_eval.get("agg_mae")
-                
-                # Training metrics
-                if result.train_metrics_clientapp and round_num in result.train_metrics_clientapp:
-                    train_metrics = dict(result.train_metrics_clientapp[round_num])
-                    round_metrics["train_loss"] = train_metrics.get("agg_loss")
-                
-                metrics_by_round.append(round_metrics)
+        # History object from run_simulation
+        # Optimize with dict pre-pass to avoid O(rounds²) nested loops
         
-        elif hasattr(result, 'metrics_centralized'):
-            # History object from run_simulation
-            for round_num in range(1, num_rounds + 1):
-                round_metrics = {"round": round_num}
-                
-                # Centralized metrics (tuples of (round, value))
-                if "test_rmse" in result.metrics_centralized:
-                    for r, val in result.metrics_centralized["test_rmse"]:
-                        if r == round_num:
-                            round_metrics["test_rmse"] = val
-                            break
-                
-                if "test_mae" in result.metrics_centralized:
-                    for r, val in result.metrics_centralized["test_mae"]:
-                        if r == round_num:
-                            round_metrics["test_mae"] = val
-                            break
-                
-                # Distributed metrics
-                if hasattr(result, 'metrics_distributed'):
-                    if "eval_rmse" in result.metrics_distributed:
-                        for r, val in result.metrics_distributed["eval_rmse"]:
-                            if r == round_num:
-                                round_metrics["client_eval_rmse"] = val
-                                break
-                    
-                    if "eval_mae" in result.metrics_distributed:
-                        for r, val in result.metrics_distributed["eval_mae"]:
-                            if r == round_num:
-                                round_metrics["client_eval_mae"] = val
-                                break
-                
-                # Distributed losses
-                if hasattr(result, 'losses_distributed'):
-                    for r, val in result.losses_distributed:
-                        if r == round_num:
-                            round_metrics["train_loss"] = val
-                            break
-                
-                metrics_by_round.append(round_metrics)
+        # Pre-pass: Convert list of (round, value) tuples to dicts (O(rounds) per metric)
+        centralized_metrics = {}
+        if hasattr(result, 'metrics_centralized') and result.metrics_centralized:
+            for metric_name, tuples in result.metrics_centralized.items():
+                centralized_metrics[metric_name] = dict(tuples)
+        
+        distributed_metrics = {}
+        if hasattr(result, 'metrics_distributed') and result.metrics_distributed:
+            for metric_name, tuples in result.metrics_distributed.items():
+                distributed_metrics[metric_name] = dict(tuples)
+        
+        distributed_losses = {}
+        if hasattr(result, 'losses_distributed') and result.losses_distributed:
+            distributed_losses = dict(result.losses_distributed)
+        
+        # Single-pass: Build per-round metrics with O(1) dict lookups
+        for round_num in range(1, num_rounds + 1):
+            round_metrics = {"round": round_num}
+            
+            # Centralized evaluation metrics (server-side test set)
+            if "test_rmse" in centralized_metrics:
+                round_metrics["test_rmse"] = centralized_metrics["test_rmse"].get(round_num)
+            if "test_mae" in centralized_metrics:
+                round_metrics["test_mae"] = centralized_metrics["test_mae"].get(round_num)
+            if "test_loss" in centralized_metrics:
+                round_metrics["test_loss"] = centralized_metrics["test_loss"].get(round_num)
+            
+            # Client-side evaluation metrics (distributed validation)
+            if "eval_rmse" in distributed_metrics:
+                round_metrics["client_eval_rmse"] = distributed_metrics["eval_rmse"].get(round_num)
+            if "eval_mae" in distributed_metrics:
+                round_metrics["client_eval_mae"] = distributed_metrics["eval_mae"].get(round_num)
+            
+            # Training loss
+            if distributed_losses:
+                round_metrics["train_loss"] = distributed_losses.get(round_num)
+            
+            metrics_by_round.append(round_metrics)
         
         return metrics_by_round
     
