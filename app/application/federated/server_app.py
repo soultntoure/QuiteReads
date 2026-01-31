@@ -32,9 +32,9 @@ from flwr.app import ArrayRecord, Context, MetricRecord, RecordDict
 from flwr.common.logger import log
 from flwr.serverapp import Grid, ServerApp
 
-from src.data.datamodule import RatingsDataModule
-from src.federated.strategy import FedAvgItemsOnly
-from src.models.lightning_module import LitBiasedMatrixFactorization
+from app.application.data import DatasetLoader
+from app.application.federated.strategy import FedAvgItemsOnly
+from app.application.training.centralized_trainer import LitBiasedMatrixFactorization
 
 # TensorBoard import (optional - gracefully handle if not available)
 try:
@@ -318,10 +318,9 @@ def _create_centralized_evaluate_fn(
         evaluate_fn callable for strategy.start()
     """
     # Pre-load test data (loaded once, reused each round)
-    datamodule = RatingsDataModule(data_dir=data_dir, batch_size=2048, num_workers=0)
-    datamodule.prepare_data()
-    datamodule.setup(stage="test")
-    test_loader = datamodule.test_dataloader()
+    loader = DatasetLoader(data_dir=data_dir)
+    loader.load()
+    test_loader = loader.get_test_loader(batch_size=2048, num_workers=0)
 
     # Item parameter names (what we receive from aggregation)
     item_param_names = {"global_bias", "item_bias.weight", "item_embedding.weight"}
@@ -538,13 +537,12 @@ def main(grid: Grid, context: Context) -> None:
     log(INFO, "  Centralized evaluation: %s", enable_centralized_eval)
 
     # Load global metadata for model dimensions
-    datamodule = RatingsDataModule(data_dir=data_dir, batch_size=1024)
-    datamodule.prepare_data()
-    datamodule.setup()
+    loader = DatasetLoader(data_dir=data_dir)
+    loader.load()
 
-    n_users = datamodule.n_users
-    n_items = datamodule.n_items
-    global_mean = datamodule.global_mean
+    n_users = loader.n_users
+    n_items = loader.n_items
+    global_mean = loader.global_mean
 
     log(INFO, "Global dimensions: %d users, %d items", n_users, n_items)
     log(INFO, "Global mean rating: %.4f", global_mean)
