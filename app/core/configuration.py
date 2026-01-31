@@ -18,6 +18,7 @@ class Configuration:
     learning_rate: float = 0.005
     regularization: float = 0.02
     n_epochs: int = 20
+    random_seed: int = 42
 
     # Federated-specific (optional)
     n_clients: Optional[int] = None
