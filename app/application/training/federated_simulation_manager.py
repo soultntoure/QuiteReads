@@ -359,7 +359,7 @@ class FederatedSimulationManager:
             FederatedSimulationResult with all metrics for persistence.
             
         Raises:
-            RuntimeError: If simulation fails.
+            FederatedSimulationError: If simulation fails.
             FileNotFoundError: If data files are missing.
         """
         start_time = time.time()
