@@ -88,16 +88,16 @@ def _get_client_datamodule(context: Context) -> ClientDataModule:
 def _create_lit_model(
     datamodule: ClientDataModule,
     n_factors: int = 16,
-    lr: float = 0.02,
-    weight_decay: float = 0.005,
+    learning_rate: float = 0.02,
+    regularization: float = 0.005,
 ) -> LitBiasedMatrixFactorization:
     """Create a new LitBiasedMatrixFactorization model.
 
     Args:
         datamodule: ClientDataModule with global dimensions
         n_factors: Latent factor dimension
-        lr: Learning rate for optimizer
-        weight_decay: L2 regularization strength
+        learning_rate: Learning rate for optimizer
+        regularization: L2 regularization strength
 
     Returns:
         Initialized LitBiasedMatrixFactorization model
@@ -107,8 +107,8 @@ def _create_lit_model(
         n_items=datamodule.global_n_items,
         n_factors=n_factors,
         global_mean=datamodule.global_mean or 0.0,
-        lr=lr,
-        weight_decay=weight_decay,
+        learning_rate=learning_rate,
+        regularization=regularization,
     )
 
 
@@ -231,8 +231,8 @@ def train(msg: Message, context: Context) -> Message:
     partition_id = int(context.node_config["partition-id"])
     n_factors = context.run_config.get("n-factors", 16)
     local_epochs = context.run_config.get("local-epochs", 1)
-    lr = context.run_config.get("lr", 0.02)
-    weight_decay = context.run_config.get("weight-decay", 0.005)
+    learning_rate = context.run_config.get("lr", 0.02)
+    regularization = context.run_config.get("weight-decay", 0.005)
 
     # Setup data
     datamodule = _get_client_datamodule(context)
@@ -242,8 +242,8 @@ def train(msg: Message, context: Context) -> Message:
     lit_model = _create_lit_model(
         datamodule,
         n_factors=n_factors,
-        lr=lr,
-        weight_decay=weight_decay,
+        learning_rate=learning_rate,
+        regularization=regularization,
     )
 
     # Load server parameters (item-side)
@@ -325,8 +325,8 @@ def evaluate(msg: Message, context: Context) -> Message:
     """
     partition_id = int(context.node_config["partition-id"])
     n_factors = context.run_config.get("n-factors", 16)
-    lr = context.run_config.get("lr", 0.02)
-    weight_decay = context.run_config.get("weight-decay", 0.005)
+    learning_rate = context.run_config.get("lr", 0.02)
+    regularization = context.run_config.get("weight-decay", 0.005)
 
     # Setup data
     datamodule = _get_client_datamodule(context)
@@ -336,8 +336,8 @@ def evaluate(msg: Message, context: Context) -> Message:
     lit_model = _create_lit_model(
         datamodule,
         n_factors=n_factors,
-        lr=lr,
-        weight_decay=weight_decay,
+        learning_rate=learning_rate,
+        regularization=regularization,
     )
 
     # Load server parameters (item-side)

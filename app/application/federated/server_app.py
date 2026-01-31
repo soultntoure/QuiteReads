@@ -343,8 +343,8 @@ def _create_centralized_evaluate_fn(
             n_items=n_items,
             n_factors=n_factors,
             global_mean=global_mean,
-            lr=user_lr,
-            weight_decay=0.0,  # No regularization for quick user embedding training
+            learning_rate=user_lr,
+            regularization=0.0,  # No regularization for quick user embedding training
         )
         lit_model.to(device)
 
