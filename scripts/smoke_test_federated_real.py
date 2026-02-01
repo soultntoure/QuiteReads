@@ -15,6 +15,7 @@ Usage:
 """
 
 import asyncio
+import shutil
 import sys
 from pathlib import Path
 
@@ -34,18 +35,22 @@ async def main():
     """Run real federated experiment with actual Flower simulation."""
     # Paths
     project_root = Path(__file__).resolve().parent.parent
-    data_dir = project_root / "data" / "splits"  # For DatasetLoader (train/val/test)
-    partition_dir = project_root / "data" / "federated"  # Pre-partitioned client data
+    data_dir = project_root / "data"  # Root data dir (partitioner expects data/splits/)
+    existing_partition_dir = project_root / "data" / "federated"  # Pre-partitioned data
+    storage_dir = project_root / "results" / "smoke_test_federated"
     
-    # Verify data exists
-    if not partition_dir.exists():
-        print(f"ERROR: Partition directory not found: {partition_dir}")
+    # Create storage directory
+    storage_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Verify partition data exists
+    if not existing_partition_dir.exists():
+        print(f"ERROR: Partition directory not found: {existing_partition_dir}")
         print("Run: uv run python scripts/partition_data.py")
         sys.exit(1)
     
-    partition_config = partition_dir / "partition_config.json"
+    partition_config = existing_partition_dir / "partition_config.json"
     if not partition_config.exists():
-        print(f"ERROR: partition_config.json not found in {partition_dir}")
+        print(f"ERROR: partition_config.json not found in {existing_partition_dir}")
         sys.exit(1)
     
     # Read partition config to get number of clients
@@ -58,12 +63,21 @@ async def main():
     print("FEDERATED SMOKE TEST - REAL END-TO-END")
     print("=" * 60)
     print(f"Data directory: {data_dir}")
-    print(f"Partition directory: {partition_dir}")
+    print(f"Partition directory: {existing_partition_dir}")
     print(f"Number of clients: {n_clients}")
     print(f"Total users: {config_data['total_users']}")
     print(f"Total items: {config_data['total_items']}")
     print(f"Global mean: {config_data['global_mean']:.4f}")
     print("=" * 60)
+    
+    # The FederatedSimulationManager stores partitions at:
+    #   storage_dir / experiment_id / "partitions"
+    # For this smoke test, we'll create a fixed experiment subdirectory
+    # and copy existing partitions there to avoid re-partitioning
+    
+    # We'll use a unique ID that ExperimentManager will generate, so we can't
+    # pre-copy. Instead, let's force repartition but with the correct paths.
+    # Actually, let's just let it repartition - the data exists in data/splits/
     
     # Get a real database session
     engine = get_engine()
