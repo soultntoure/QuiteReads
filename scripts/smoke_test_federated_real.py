@@ -163,18 +163,18 @@ async def main():
             # Verify success
             if len(metrics) >= n_rounds * 2:  # At minimum: rmse + mae per round
                 print(
-                    f"\n✓ SUCCESS: {len(metrics)} metrics persisted and "
+                    f"\n[PASS] SUCCESS: {len(metrics)} metrics persisted and "
                     "retrieved from PostgreSQL."
                 )
             else:
                 print(
-                    f"\n✗ FAILURE: Expected at least {n_rounds * 2} metrics, "
+                    f"\n[FAIL] FAILURE: Expected at least {n_rounds * 2} metrics, "
                     f"got {len(metrics)}."
                 )
                 sys.exit(1)
                 
         except Exception as e:
-            print(f"\n✗ EXPERIMENT FAILED: {e}")
+            print(f"\n[FAIL] EXPERIMENT FAILED: {e}")
             import traceback
             traceback.print_exc()
             sys.exit(1)
