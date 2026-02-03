@@ -31,7 +31,8 @@
       "mcp__perplexity__search",
       "Skill(module-readme-standard)",
       "Skill(module-readme-standard:*)",
-      "Bash(uv add:*)"
+      "Bash(uv add:*)",
+      "WebFetch(domain:flower.ai)"
     ],
     "deny": [],
     "ask": []

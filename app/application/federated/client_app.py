@@ -27,7 +27,7 @@ from flwr.app import ArrayRecord, Context, Message, MetricRecord, RecordDict
 from flwr.clientapp import ClientApp
 
 from app.application.data import ClientDataModule, load_partition_config
-from app.application.federated import ITEM_PARAM_NAMES
+from app.application.federated import ITEM_PARAM_NAMES, get_run_config
 from app.application.training.centralized_trainer import LitBiasedMatrixFactorization
 
 
@@ -54,8 +54,9 @@ def _get_client_datamodule(context: Context) -> ClientDataModule:
     Returns:
         Configured and setup ClientDataModule
     """
+    cfg = get_run_config(context.run_config)
     partition_id = int(context.node_config["partition-id"])
-    partition_dir = Path(context.run_config.get("partition-dir", "data/federated"))
+    partition_dir = Path(cfg.get("partition-dir", "data/federated"))
 
     # Load partition config for global dimensions
     config = load_partition_config(partition_dir)
@@ -73,7 +74,7 @@ def _get_client_datamodule(context: Context) -> ClientDataModule:
         global_n_users=global_n_users,
         global_n_items=global_n_items,
         global_mean=global_mean,
-        batch_size=context.run_config.get("batch-size", 1024),
+        batch_size=cfg.get("batch-size", 1024),
         num_workers=0,
     )
     datamodule.prepare_data()
@@ -225,11 +226,12 @@ def train(msg: Message, context: Context) -> Message:
     Returns:
         Message with updated item parameters and training metrics
     """
+    cfg = get_run_config(context.run_config)
     partition_id = int(context.node_config["partition-id"])
-    n_factors = context.run_config.get("n-factors", 16)
-    local_epochs = context.run_config.get("local-epochs", 1)
-    learning_rate = context.run_config.get("lr", 0.02)
-    regularization = context.run_config.get("weight-decay", 0.005)
+    n_factors = cfg.get("n-factors", 16)
+    local_epochs = cfg.get("local-epochs", 1)
+    learning_rate = cfg.get("lr", 0.02)
+    regularization = cfg.get("weight-decay", 0.005)
 
     # Setup data
     datamodule = _get_client_datamodule(context)
@@ -320,10 +322,11 @@ def evaluate(msg: Message, context: Context) -> Message:
     Returns:
         Message with evaluation metrics (loss, RMSE, MAE)
     """
+    cfg = get_run_config(context.run_config)
     partition_id = int(context.node_config["partition-id"])
-    n_factors = context.run_config.get("n-factors", 16)
-    learning_rate = context.run_config.get("lr", 0.02)
-    regularization = context.run_config.get("weight-decay", 0.005)
+    n_factors = cfg.get("n-factors", 16)
+    learning_rate = cfg.get("lr", 0.02)
+    regularization = cfg.get("weight-decay", 0.005)
 
     # Setup data
     datamodule = _get_client_datamodule(context)

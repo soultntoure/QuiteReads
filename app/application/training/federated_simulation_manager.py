@@ -10,6 +10,7 @@ This is the main entry point for running federated experiments from the
 application layer, bridging domain entities and FL infrastructure.
 """
 
+import json
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -213,59 +214,52 @@ class FederatedSimulationManager:
     def _run_flower_simulation(
         self,
         run_config: Dict[str, Any],
-    ) -> Any:
+    ) -> None:
         """Run Flower simulation programmatically.
-        
-        Invokes Flower's run_simulation() with server and client apps
-        from the federated module.
-        
+
+        Flower 1.25's run_simulation() does not accept run_config and returns
+        None. Configuration is passed via a module-level shared dict that
+        server_app and client_app read as a fallback when context.run_config
+        is empty.
+
         Args:
             run_config: Configuration dictionary for the simulation.
-            
-        Returns:
-            History object from run_simulation() containing metrics_centralized,
-            metrics_distributed, and losses_distributed as lists of (round, value) tuples.
         """
         from flwr.simulation import run_simulation
-        
+
+        import app.application.federated as federated_module
         from app.application.federated.client_app import app as client_app
         from app.application.federated.server_app import app as server_app
-        
-        # Run simulation and return History object
-        history = run_simulation(
-            server_app=server_app,
-            client_app=client_app,
-            num_supernodes=self.num_clients,
-            backend_config={
-                "client_resources": {
-                    "num_cpus": 1,
-                    "num_gpus": 0.0,
+
+        # Set shared config so server_app/client_app can read it
+        federated_module._simulation_run_config = run_config
+        try:
+            run_simulation(
+                server_app=server_app,
+                client_app=client_app,
+                num_supernodes=self.num_clients,
+                backend_config={
+                    "client_resources": {
+                        "num_cpus": 1,
+                        "num_gpus": 0.0,
+                    },
                 },
-            },
-            run_config=run_config,
-        )
-        
-        return history
+            )
+        finally:
+            federated_module._simulation_run_config = {}
     
-    def _extract_metrics_from_result(
+    def _load_metrics_from_json(
         self,
-        result: Any,
         num_rounds: int,
     ) -> List[Dict[str, Any]]:
-        """Extract per-round metrics from Flower History object.
-        
-        Converts Flower's History object (returned by run_simulation) into a list
-        of per-round metric dictionaries suitable for database persistence.
-        
-        Note: run_simulation() returns a History object, NOT the FedAvgResult
-        from strategy.start(). The FedAvgResult with richer metrics is internal
-        to server_app.main() and doesn't propagate out. For access to those
-        metrics, read the final_metrics.json file saved by server_app.py.
-        
+        """Load per-round metrics from final_metrics.json saved by server_app.
+
+        Flower 1.25's run_simulation() returns None, so metrics are read from
+        the JSON file that server_app.py writes at the end of training.
+
         Args:
-            result: History object from run_simulation().
             num_rounds: Number of rounds completed.
-            
+
         Returns:
             List of dictionaries with per-round metrics:
                 - round: Round number (1-indexed)
@@ -275,50 +269,43 @@ class FederatedSimulationManager:
                 - client_eval_mae: Aggregated client validation MAE (if available)
                 - train_loss: Aggregated training loss (if available)
         """
+        metrics_path = self.storage_dir / "final_metrics.json"
+        if not metrics_path.exists():
+            raise FederatedSimulationError(
+                f"final_metrics.json not found at {metrics_path}. "
+                "Server app may have failed before saving metrics."
+            )
+
+        with open(metrics_path) as f:
+            data = json.load(f)
+
+        history = data.get("history", {})
+        centralized = history.get("centralized_eval", {})
+        client_eval = history.get("client_eval", {})
+        train = history.get("train", {})
+
         metrics_by_round = []
-        
-        # History object from run_simulation
-        # Optimize with dict pre-pass to avoid O(rounds²) nested loops
-        
-        # Pre-pass: Convert list of (round, value) tuples to dicts (O(rounds) per metric)
-        centralized_metrics = {}
-        if hasattr(result, 'metrics_centralized') and result.metrics_centralized:
-            for metric_name, tuples in result.metrics_centralized.items():
-                centralized_metrics[metric_name] = dict(tuples)
-        
-        distributed_metrics = {}
-        if hasattr(result, 'metrics_distributed') and result.metrics_distributed:
-            for metric_name, tuples in result.metrics_distributed.items():
-                distributed_metrics[metric_name] = dict(tuples)
-        
-        distributed_losses = {}
-        if hasattr(result, 'losses_distributed') and result.losses_distributed:
-            distributed_losses = dict(result.losses_distributed)
-        
-        # Single-pass: Build per-round metrics with O(1) dict lookups
         for round_num in range(1, num_rounds + 1):
-            round_metrics = {"round": round_num}
-            
+            round_key = str(round_num)
+            round_metrics: Dict[str, Any] = {"round": round_num}
+
             # Centralized evaluation metrics (server-side test set)
-            if "test_rmse" in centralized_metrics:
-                round_metrics["test_rmse"] = centralized_metrics["test_rmse"].get(round_num)
-            if "test_mae" in centralized_metrics:
-                round_metrics["test_mae"] = centralized_metrics["test_mae"].get(round_num)
-            if "test_loss" in centralized_metrics:
-                round_metrics["test_loss"] = centralized_metrics["test_loss"].get(round_num)
-            
-            # Client-side evaluation metrics (distributed validation)
-            if "eval_rmse" in distributed_metrics:
-                round_metrics["client_eval_rmse"] = distributed_metrics["eval_rmse"].get(round_num)
-            if "eval_mae" in distributed_metrics:
-                round_metrics["client_eval_mae"] = distributed_metrics["eval_mae"].get(round_num)
-            
+            if round_key in centralized:
+                round_metrics["test_rmse"] = centralized[round_key].get("test_rmse")
+                round_metrics["test_mae"] = centralized[round_key].get("test_mae")
+                round_metrics["test_loss"] = centralized[round_key].get("test_loss")
+
+            # Client-side evaluation metrics
+            if round_key in client_eval:
+                round_metrics["client_eval_rmse"] = client_eval[round_key].get("agg_rmse")
+                round_metrics["client_eval_mae"] = client_eval[round_key].get("agg_mae")
+
             # Training loss
-            if distributed_losses:
-                round_metrics["train_loss"] = distributed_losses.get(round_num)
-            
+            if round_key in train:
+                round_metrics["train_loss"] = train[round_key].get("agg_loss")
+
             metrics_by_round.append(round_metrics)
-        
+
         return metrics_by_round
     
     def run_simulation(
@@ -383,13 +370,13 @@ class FederatedSimulationManager:
             user_epochs=user_epochs,
         )
         
-        # 3. Run Flower simulation
-        result = self._run_flower_simulation(run_config)
-        
+        # 3. Run Flower simulation (returns None in Flower 1.25)
+        self._run_flower_simulation(run_config)
+
         training_time = time.time() - start_time
-        
-        # 4. Extract metrics from result
-        metrics_by_round = self._extract_metrics_from_result(result, num_rounds)
+
+        # 4. Load metrics from final_metrics.json saved by server_app
+        metrics_by_round = self._load_metrics_from_json(num_rounds)
         
         # 5. Calculate final and best metrics
         final_rmse = float("inf")
@@ -446,5 +433,4 @@ class FederatedSimulationManager:
             training_time_seconds=training_time,
             num_rounds=num_rounds,
             metrics_by_round=metrics_by_round,
-            raw_result=result,
         )

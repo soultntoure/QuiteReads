@@ -1,0 +1,38 @@
+{
+  "best_test_rmse": 0.7220058091450362,
+  "best_test_mae": 0.5416500568389893,
+  "best_round": 0,
+  "final_test_rmse": 0.722010762382772,
+  "final_test_mae": 0.5416539907455444,
+  "rounds_completed": 2,
+  "model_config": {
+    "n_users": 5949,
+    "n_items": 2856,
+    "n_factors": 16,
+    "global_bias": 4.0738091468811035,
+    "n_parameters": 149686,
+    "n_item_parameters": 48553,
+    "n_user_parameters": 101133
+  },
+  "history": {
+    "centralized_eval": {
+      "0": {
+        "test_rmse": 0.7220058091450362,
+        "test_mae": 0.5416500568389893,
+        "test_loss": 0.5212923884391785
+      },
+      "1": {
+        "test_rmse": 0.7220083683221092,
+        "test_mae": 0.5416536927223206,
+        "test_loss": 0.5212960839271545
+      },
+      "2": {
+        "test_rmse": 0.722010762382772,
+        "test_mae": 0.5416539907455444,
+        "test_loss": 0.5212995409965516
+      }
+    },
+    "client_eval": {},
+    "train": {}
+  }
+}

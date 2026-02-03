@@ -32,7 +32,7 @@ from flwr.common.logger import log
 from flwr.serverapp import Grid, ServerApp
 
 from app.application.data import DatasetLoader
-from app.application.federated import ITEM_PARAM_NAMES
+from app.application.federated import ITEM_PARAM_NAMES, get_run_config
 from app.application.federated.strategy import FedAvgItemsOnly
 from app.application.reporting.metrics_calculator import compute_metrics
 from app.application.training.centralized_trainer import LitBiasedMatrixFactorization
@@ -439,19 +439,20 @@ def main(grid: Grid, context: Context) -> None:
         - user-epochs: Epochs for user embedding in centralized eval (default: 3)
         - output-dir: Directory for saving results (default: "results/federated")
     """
-    # Read configuration
-    data_dir = Path(context.run_config.get("data-dir", "data"))
-    output_dir = Path(context.run_config.get("output-dir", "results/federated"))
-    num_rounds = context.run_config.get("num-rounds", 10)
-    n_factors = context.run_config.get("n-factors", 16)
-    fraction_train = context.run_config.get("fraction-train", 1.0)
-    fraction_evaluate = context.run_config.get("fraction-evaluate", 1.0)
-    min_train_clients = context.run_config.get("min-train-clients", 2)
-    min_evaluate_clients = context.run_config.get("min-evaluate-clients", 2)
-    min_available_clients = context.run_config.get("min-available-clients", min(min_train_clients, min_evaluate_clients))
-    enable_centralized_eval = context.run_config.get("centralized-eval", True)
-    user_lr = context.run_config.get("user-lr", 0.1)
-    user_epochs = context.run_config.get("user-epochs", 3)
+    # Read configuration (fall back to shared config for programmatic simulation)
+    cfg = get_run_config(context.run_config)
+    data_dir = Path(cfg.get("data-dir", "data"))
+    output_dir = Path(cfg.get("output-dir", "results/federated"))
+    num_rounds = cfg.get("num-rounds", 10)
+    n_factors = cfg.get("n-factors", 16)
+    fraction_train = cfg.get("fraction-train", 1.0)
+    fraction_evaluate = cfg.get("fraction-evaluate", 1.0)
+    min_train_clients = cfg.get("min-train-clients", 2)
+    min_evaluate_clients = cfg.get("min-evaluate-clients", 2)
+    min_available_clients = cfg.get("min-available-clients", min(min_train_clients, min_evaluate_clients))
+    enable_centralized_eval = cfg.get("centralized-eval", True)
+    user_lr = cfg.get("user-lr", 0.1)
+    user_epochs = cfg.get("user-epochs", 3)
 
     log(INFO, "=" * 60)
     log(INFO, "FEDERATED MATRIX FACTORIZATION - SERVER")
