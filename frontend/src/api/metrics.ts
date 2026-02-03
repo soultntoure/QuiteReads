@@ -20,7 +20,7 @@ export const metricsApi = {
     if (filters?.client_id) params.append("client_id", filters.client_id);
     if (filters?.round_number !== undefined) params.append("round_number", String(filters.round_number));
     const query = params.toString();
-    return apiGet<MetricListResponse>(`/experiments/${experimentId}/metrics${query ? `?${query}` : ""}`);
+    return apiGet<MetricListResponse>(`/experiments/${experimentId}/metrics/${query ? `?${query}` : ""}`);
   },
 
   // Add single metric
