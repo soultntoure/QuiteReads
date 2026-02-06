@@ -25,7 +25,6 @@ export const experimentsApi = {
     const query = params.toString();
     return apiGet<ExperimentListResponse>(`/experiments/${query ? `?${query}` : ""}`);
   },
-  // return apiGet<ExperimentListResponse>(`/experiments${query ? `?${query}` : ""}`);
 
   // Get single experiment
   get: (id: string) => apiGet<ExperimentResponse>(`/experiments/${id}`),
