@@ -23,7 +23,7 @@ export const experimentsApi = {
     if (filters?.status_filter) params.append("status_filter", filters.status_filter);
     if (filters?.type_filter) params.append("type_filter", filters.type_filter);
     const query = params.toString();
-    return apiGet<ExperimentListResponse>(`/experiments/${query ? `?${query}` : "/"}`);
+    return apiGet<ExperimentListResponse>(`/experiments/${query ? `?${query}` : ""}`);
   },
   // return apiGet<ExperimentListResponse>(`/experiments${query ? `?${query}` : ""}`);
 
