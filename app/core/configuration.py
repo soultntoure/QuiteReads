@@ -15,8 +15,8 @@ class Configuration:
 
     model_type: ModelType = ModelType.BIASED_SVD
     n_factors: int = 20
-    learning_rate: float = 0.005
-    regularization: float = 0.02
+    learning_rate: float = 0.02
+    regularization: float = 0.03
     n_epochs: int = 20
     random_seed: int = 42
 
@@ -38,8 +38,8 @@ class Configuration:
 CENTRALIZED_DEFAULT = Configuration(n_factors=20, n_epochs=20)
 FEDERATED_DEFAULT = Configuration(
     n_factors=20,
-    n_epochs=10,
+    n_epochs=8,
     n_clients=5,
-    n_rounds=10,
+    n_rounds=2,
     aggregation_strategy=AggregationStrategy.FEDAVG,
 )

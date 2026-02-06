@@ -153,14 +153,14 @@ class FederatedSimulationManager:
         num_rounds: int,
         n_factors: int,
         learning_rate: float = 0.02,
-        regularization: float = 0.005,
-        local_epochs: int = 5,
+        regularization: float = 0.003,
+        local_epochs: int = 4,
         batch_size: int = 1024,
         fraction_train: float = 1.0,
         fraction_evaluate: float = 1.0,
         enable_centralized_eval: bool = True,
         user_lr: float = 0.1,
-        user_epochs: int = 3,
+        user_epochs: int = 5,
     ) -> Dict[str, Any]:
         """Build Flower run_config dictionary.
         
@@ -310,17 +310,17 @@ class FederatedSimulationManager:
     
     def run_simulation(
         self,
-        num_rounds: int = 10,
-        n_factors: int = 16,
+        num_rounds: int = 2,
+        n_factors: int = 20,
         learning_rate: float = 0.02,
-        regularization: float = 0.005,
-        local_epochs: int = 5,
-        batch_size: int = 1024,
+        regularization: float = 0.003,
+        local_epochs: int = 4,
+        batch_size: int = 64,
         fraction_train: float = 1.0,
         fraction_evaluate: float = 1.0,
         enable_centralized_eval: bool = True,
-        user_lr: float = 0.1,
-        user_epochs: int = 3,
+        user_lr: float = 0.0009,
+        user_epochs: int = 5,
         force_repartition: bool = False,
     ) -> FederatedSimulationResult:
         """Run complete federated simulation.

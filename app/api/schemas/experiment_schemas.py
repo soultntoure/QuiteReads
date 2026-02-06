@@ -201,7 +201,7 @@ class CreateCentralizedExperimentRequest(BaseModel):
         return Configuration(
             learning_rate=self.config.learning_rate,
             n_factors=20,
-            regularization=0.02,
+            regularization=0.03,
             n_epochs=self.config.epochs,
             batch_size=self.config.batch_size,
             model_type=self.config.to_domain_model_type(),
@@ -245,7 +245,7 @@ class CreateFederatedExperimentRequest(BaseModel):
         return Configuration(
             learning_rate=self.config.learning_rate,
             n_factors=20,
-            regularization=0.02,
+            regularization=0.03,
             n_epochs=self.config.epochs,
             n_clients=self.n_clients,
             n_rounds=self.n_rounds,

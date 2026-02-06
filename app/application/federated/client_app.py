@@ -87,7 +87,7 @@ def _create_lit_model(
     datamodule: ClientDataModule,
     n_factors: int = 16,
     learning_rate: float = 0.02,
-    regularization: float = 0.005,
+    regularization: float = 0.003,
 ) -> LitBiasedMatrixFactorization:
     """Create a new LitBiasedMatrixFactorization model.
 
@@ -229,9 +229,9 @@ def train(msg: Message, context: Context) -> Message:
     cfg = get_run_config(context.run_config)
     partition_id = int(context.node_config["partition-id"])
     n_factors = cfg.get("n-factors", 16)
-    local_epochs = cfg.get("local-epochs", 1)
+    local_epochs = cfg.get("local-epochs", 4)
     learning_rate = cfg.get("lr", 0.02)
-    regularization = cfg.get("weight-decay", 0.005)
+    regularization = cfg.get("weight-decay", 0.003)
 
     # Setup data
     datamodule = _get_client_datamodule(context)
@@ -326,7 +326,7 @@ def evaluate(msg: Message, context: Context) -> Message:
     partition_id = int(context.node_config["partition-id"])
     n_factors = cfg.get("n-factors", 16)
     learning_rate = cfg.get("lr", 0.02)
-    regularization = cfg.get("weight-decay", 0.005)
+    regularization = cfg.get("weight-decay", 0.003)
 
     # Setup data
     datamodule = _get_client_datamodule(context)
