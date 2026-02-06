@@ -18,6 +18,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  Database,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { HealthIndicator } from "@/components/HealthIndicator";
@@ -55,12 +56,12 @@ function NavItem({ to, icon: Icon, label, collapsed, active }: NavItemProps) {
 
 function SidebarContent({ collapsed = false }: { collapsed?: boolean }) {
   const location = useLocation();
-  
+
   const isActive = (path: string) => {
     if (path === "/") return location.pathname === "/";
     return location.pathname.startsWith(path);
   };
-  
+
   return (
     <div className="flex h-full flex-col">
       {/* Logo */}
@@ -77,7 +78,7 @@ function SidebarContent({ collapsed = false }: { collapsed?: boolean }) {
           )}
         </Link>
       </div>
-      
+
       {/* Navigation */}
       <ScrollArea className="flex-1 px-3 py-4">
         <nav className="space-y-2">
@@ -95,7 +96,14 @@ function SidebarContent({ collapsed = false }: { collapsed?: boolean }) {
             collapsed={collapsed}
             active={isActive("/experiments") && !location.pathname.includes("/new/")}
           />
-          
+          <NavItem
+            to="/dataset"
+            icon={Database}
+            label="Datasets"
+            collapsed={collapsed}
+            active={isActive("/dataset")}
+          />
+
           {/* New Experiment Dropdown */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -133,7 +141,7 @@ function SidebarContent({ collapsed = false }: { collapsed?: boolean }) {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
-  
+
   return (
     <div className="flex min-h-screen w-full">
       {/* Desktop Sidebar */}
@@ -144,7 +152,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
         )}
       >
         <SidebarContent collapsed={collapsed} />
-        
+
         {/* Collapse Button */}
         <Button
           variant="ghost"
@@ -159,7 +167,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           )}
         </Button>
       </aside>
-      
+
       {/* Main Content */}
       <div
         className={cn(
@@ -180,17 +188,17 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               <SidebarContent />
             </SheetContent>
           </Sheet>
-          
+
           {/* Spacer for desktop */}
           <div className="hidden lg:block" />
-          
+
           {/* Right side */}
           <div className="flex items-center gap-4">
             <HealthIndicator />
             <ThemeToggle />
           </div>
         </header>
-        
+
         {/* Page Content */}
         <main className="flex-1 p-4 lg:p-6">
           {children}

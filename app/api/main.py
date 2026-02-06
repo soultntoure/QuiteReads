@@ -6,7 +6,7 @@ Entry point for the FastAPI application and global configuration.
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import health, experiments, metrics
+from app.api.routes import health, experiments, metrics, datasets
 from app.utils.exceptions import EntityNotFoundError, ConfigurationError, RepositoryError
 
 app = FastAPI(
@@ -47,10 +47,10 @@ async def repository_error_handler(request: Request, exc: RepositoryError):
         content={"detail": str(exc)},
     )
 
-
 app.include_router(health.router)
 app.include_router(experiments.router)
 app.include_router(metrics.router)
+app.include_router(datasets.router, prefix="/datasets", tags=["datasets"])
 
 
 if __name__ == "__main__":
