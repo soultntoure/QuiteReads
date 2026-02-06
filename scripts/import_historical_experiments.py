@@ -77,7 +77,7 @@ def create_centralized_experiment(
         # Add RMSE metric
         experiment.add_epoch_metric(
             PerformanceMetric(
-                name="val_rmse",
+                name="rmse",
                 value=values["rmse"],
                 experiment_id=experiment.experiment_id,
                 context=f"epoch_{epoch}",
@@ -88,7 +88,7 @@ def create_centralized_experiment(
         # Add MAE metric
         experiment.add_epoch_metric(
             PerformanceMetric(
-                name="val_mae",
+                name="mae",
                 value=values["mae"],
                 experiment_id=experiment.experiment_id,
                 context=f"epoch_{epoch}",
@@ -103,7 +103,7 @@ def create_centralized_experiment(
 
         experiment.add_epoch_metric(
             PerformanceMetric(
-                name="train_loss",
+                name="loss",
                 value=values["loss"],
                 experiment_id=experiment.experiment_id,
                 context=f"epoch_{epoch}",
@@ -167,7 +167,7 @@ def create_federated_experiment(
         # Add test RMSE metric
         experiment.round_metrics.append(
             PerformanceMetric(
-                name="test_rmse",
+                name="rmse",
                 value=values["test_rmse"],
                 experiment_id=experiment.experiment_id,
                 context=f"round_{round_num}",
@@ -178,7 +178,7 @@ def create_federated_experiment(
         # Add test MAE metric
         experiment.round_metrics.append(
             PerformanceMetric(
-                name="test_mae",
+                name="mae",
                 value=values["test_mae"],
                 experiment_id=experiment.experiment_id,
                 context=f"round_{round_num}",
@@ -189,7 +189,7 @@ def create_federated_experiment(
         # Add test loss metric
         experiment.round_metrics.append(
             PerformanceMetric(
-                name="test_loss",
+                name="loss",
                 value=values["test_loss"],
                 experiment_id=experiment.experiment_id,
                 context=f"round_{round_num}",
@@ -204,7 +204,7 @@ def create_federated_experiment(
 
         experiment.round_metrics.append(
             PerformanceMetric(
-                name="train_loss",
+                name="loss",
                 value=values["agg_loss"],
                 experiment_id=experiment.experiment_id,
                 context=f"round_{round_num}",
