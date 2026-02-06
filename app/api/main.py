@@ -6,8 +6,13 @@ Entry point for the FastAPI application and global configuration.
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import health, experiments, metrics
-from app.utils.exceptions import EntityNotFoundError, ConfigurationError, RepositoryError
+from app.api.routes import health, experiments, metrics, dataset
+from app.utils.exceptions import (
+    ConfigurationError,
+    DataPreprocessError,
+    EntityNotFoundError,
+    RepositoryError,
+)
 
 app = FastAPI(
     title="Federated Learning Dashboard API",
@@ -48,9 +53,18 @@ async def repository_error_handler(request: Request, exc: RepositoryError):
     )
 
 
+@app.exception_handler(DataPreprocessError)
+async def data_preprocess_error_handler(request: Request, exc: DataPreprocessError):
+    return JSONResponse(
+        status_code=422,
+        content={"detail": str(exc)},
+    )
+
+
 app.include_router(health.router)
 app.include_router(experiments.router)
 app.include_router(metrics.router)
+app.include_router(dataset.router)
 
 
 if __name__ == "__main__":

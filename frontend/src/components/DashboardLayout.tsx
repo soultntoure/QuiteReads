@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   LayoutDashboard,
+  Database,
   FlaskConical,
   Plus,
   Server,
@@ -87,6 +88,13 @@ function SidebarContent({ collapsed = false }: { collapsed?: boolean }) {
             label="Dashboard"
             collapsed={collapsed}
             active={isActive("/") && location.pathname === "/"}
+          />
+          <NavItem
+            to="/dataset"
+            icon={Database}
+            label="Dataset"
+            collapsed={collapsed}
+            active={isActive("/dataset")}
           />
           <NavItem
             to="/experiments"

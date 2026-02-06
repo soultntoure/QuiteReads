@@ -1,0 +1,39 @@
+{
+  "preprocessing_date": "2026-02-07T04:28:34.900261",
+  "config": {
+    "min_user_ratings": 20,
+    "min_item_ratings": 20,
+    "val_ratio": 0.1,
+    "test_ratio": 0.2,
+    "random_seed": 42
+  },
+  "filter_iterations": 7,
+  "statistics": {
+    "original_interactions": 2734350,
+    "original_users": 377799,
+    "original_items": 36514,
+    "filtered_interactions": 228793,
+    "filtered_users": 5949,
+    "filtered_items": 2856,
+    "sparsity": 0.986534,
+    "sparsity_percent": "98.65%",
+    "density_percent": "1.3466%",
+    "rating_mean": 4.0751,
+    "rating_std": 0.9718,
+    "rating_min": 1,
+    "rating_max": 5,
+    "retention_rate": "8.37%"
+  },
+  "train_size": 160156,
+  "val_size": 22879,
+  "test_size": 45758,
+  "files": {
+    "interactions_filtered": "processed/interactions_filtered.parquet",
+    "interactions_indexed": "processed/interactions_indexed.parquet",
+    "user_mapping": "processed/user_mapping.json",
+    "item_mapping": "processed/item_mapping.json",
+    "train": "splits/train.parquet",
+    "val": "splits/val.parquet",
+    "test": "splits/test.parquet"
+  }
+}

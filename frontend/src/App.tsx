@@ -9,6 +9,7 @@ import ExperimentsList from "@/pages/ExperimentsList";
 import ExperimentDetail from "@/pages/ExperimentDetail";
 import CreateCentralizedExperiment from "@/pages/CreateCentralizedExperiment";
 import CreateFederatedExperiment from "@/pages/CreateFederatedExperiment";
+import DatasetPage from "@/pages/DatasetPage";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient({
@@ -29,6 +30,7 @@ const App = () => (
         <DashboardLayout>
           <Routes>
             <Route path="/" element={<Dashboard />} />
+            <Route path="/dataset" element={<DatasetPage />} />
             <Route path="/experiments" element={<ExperimentsList />} />
             <Route path="/experiments/new/centralized" element={<CreateCentralizedExperiment />} />
             <Route path="/experiments/new/federated" element={<CreateFederatedExperiment />} />

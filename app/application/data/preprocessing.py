@@ -26,7 +26,7 @@ import logging
 from dataclasses import dataclass, asdict
 from datetime import datetime
 from pathlib import Path
-from typing import Tuple
+from typing import Callable, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -506,7 +506,8 @@ def save_artifacts(
 def run_preprocessing_pipeline(
     raw_path: Path,
     output_dir: Path,
-    config: PreprocessingConfig = None
+    config: PreprocessingConfig = None,
+    progress_callback: Optional[Callable[[str, int, str], None]] = None,
 ) -> dict:
     """Execute the full preprocessing pipeline.
 
@@ -514,6 +515,8 @@ def run_preprocessing_pipeline(
         raw_path: Path to raw JSON data
         output_dir: Base directory for outputs
         config: Preprocessing configuration (uses defaults if None)
+        progress_callback: Optional callback(step, step_number, message)
+            for reporting progress to callers.
 
     Returns:
         Dictionary containing metadata and statistics
@@ -521,14 +524,20 @@ def run_preprocessing_pipeline(
     if config is None:
         config = PreprocessingConfig()
 
+    def _notify(step: str, step_number: int, message: str) -> None:
+        if progress_callback:
+            progress_callback(step, step_number, message)
+
     logger.info("=" * 60)
     logger.info("PREPROCESSING PIPELINE START")
     logger.info("=" * 60)
 
     # Step 1: Load raw data
+    _notify("loading", 2, "Loading raw interactions...")
     df_original = load_raw_interactions(raw_path)
 
     # Step 2: Filter implicit interactions (rating == 0)
+    _notify("filtering", 3, "Filtering implicit ratings and sparse users/items...")
     df = filter_implicit_interactions(df_original)
 
     # Step 3: Iterative filtering of sparse users and items
@@ -539,12 +548,14 @@ def run_preprocessing_pipeline(
     )
 
     # Step 4: Create ID mappings
+    _notify("mapping", 4, "Creating contiguous ID mappings...")
     user_to_idx, idx_to_user, item_to_idx, idx_to_item = create_id_mappings(df_filtered)
 
     # Step 5: Apply mappings to create indexed DataFrame
     df_indexed = apply_id_mappings(df_filtered, user_to_idx, item_to_idx)
 
     # Step 6: Create train/val/test split
+    _notify("splitting", 5, "Creating train/val/test splits...")
     train_df, val_df, test_df = create_train_val_test_split(
         df_indexed,
         val_ratio=config.val_ratio,
@@ -557,6 +568,7 @@ def run_preprocessing_pipeline(
     validate_dataset(df_filtered)
 
     # Step 8: Save all artifacts
+    _notify("saving", 6, "Saving processed artifacts...")
     save_artifacts(
         df_filtered=df_filtered,
         df_indexed=df_indexed,
