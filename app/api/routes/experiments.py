@@ -2,19 +2,26 @@
 
 Endpoints for managing centralized and federated learning experiments.
 """
+import asyncio
+import logging
 from typing import Annotated
+
 from fastapi import APIRouter, Depends, Query, Response, status
+
+from app.api.dependencies import get_experiment_service
 from app.api.schemas.experiment_schemas import (
+    CompleteExperimentRequest,
     CreateCentralizedExperimentRequest,
     CreateFederatedExperimentRequest,
-    CompleteExperimentRequest,
-    ExperimentResponse,
     ExperimentListResponse,
-    ExperimentType,
+    ExperimentResponse,
     ExperimentStatus,
+    ExperimentType,
 )
-from app.api.dependencies import get_experiment_service
 from app.application.services import ExperimentService
+from app.application.training_runner import run_experiment_training
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/experiments", tags=["experiments"])
 
@@ -81,8 +88,23 @@ async def get_experiment(experiment_id: str, service: ExperimentServiceDep):
 
 @router.post("/{experiment_id}/start", response_model=ExperimentResponse)
 async def start_experiment(experiment_id: str, service: ExperimentServiceDep):
-    """Start an experiment (transition to RUNNING status)"""
+    """Start an experiment and begin training in the background.
+
+    Transitions experiment to RUNNING status and spawns a background task
+    to execute the actual training. Returns immediately - use GET endpoint
+    to poll for progress and completion.
+    """
+    # Transition to RUNNING (validates experiment exists and is PENDING)
     experiment = await service.start_experiment(experiment_id)
+
+    # Spawn background training task
+    asyncio.create_task(
+        run_experiment_training(experiment_id),
+        name=f"training-{experiment_id}",
+    )
+
+    logger.info(f"Spawned background training task for experiment {experiment_id}")
+
     return ExperimentResponse.from_domain(experiment)
 
 
