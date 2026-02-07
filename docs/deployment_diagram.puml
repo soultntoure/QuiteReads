@@ -1,0 +1,109 @@
+@startuml FedRec_Dashboard_Deployment
+!pragma layout smetana
+skinparam defaultFontSize 10
+skinparam defaultFontName Arial
+skinparam rectangle {
+  roundCorner 5
+  StereotypeFontSize 0
+}
+skinparam linetype ortho
+skinparam nodesep 40
+skinparam ranksep 40
+
+' ============================================================
+' CLIENT ENVIRONMENT (Top - Light Blue)
+' ============================================================
+rectangle "**Client Environment**" as ClientEnv #D6EAF8 {
+  rectangle "Web Browser\n//React + Vite Dashboard//\n//TypeScript + Tailwind CSS//" as Browser #FFFFFF
+  rectangle "HTTP Client\n//Postman / cURL//" as HTTPClient #FFFFFF
+}
+
+' ============================================================
+' SERVER NODE (Center - Green border with Purple interior)
+' ============================================================
+rectangle "**Server Node: FastAPI Application Server**" as ServerNode #D5F5E3 {
+  rectangle "**Python Runtime Environment**" as RuntimeEnv #D7BDE2 {
+    rectangle "Uvicorn ASGI Server\n//Port 8000//" as Uvicorn #FFFFFF
+    rectangle "Application Code\n//app///" as AppCode #FFFFFF
+    rectangle "Service Layer\n//ExperimentManager//\n//CentralizedTrainer//\n//FederatedSimulationManager//" as ServiceLayer #FFFFFF
+  }
+}
+
+' ============================================================
+' MODEL STORAGE (Left - Yellow/Gold)
+' ============================================================
+rectangle "**Model Storage**" as ModelStorage #FCF3CF {
+  rectangle "BiasedMatrixFactorization\nModel\n//PyTorch nn.Module//\n//user & item embeddings//" as MFModel #FFFFFF
+  rectangle "PyTorch Lightning\nCheckpoints\n//checkpoints///" as Checkpoints #FFFFFF
+  rectangle "Federated Round\nArtifacts\n//storage/artifacts///" as Artifacts #FFFFFF
+}
+
+' ============================================================
+' PYTHON ENVIRONMENT (Right - Light Green)
+' ============================================================
+rectangle "**Python Environment**" as PyEnv #D5F5E3 {
+  rectangle "Virtual Environment\n//uv package manager//\n//.venv//" as VEnv #FFFFFF
+  rectangle "Python 3.12\nInterpreter" as PyInterp #FFFFFF
+}
+
+' ============================================================
+' DATABASE (Bottom Center - Light Blue/Indigo)
+' ============================================================
+rectangle "**Database**" as DatabaseZone #D4E6F1 {
+  rectangle "PostgreSQL\n//asyncpg driver//\n//SQLAlchemy async ORM//" as PostgreSQL #FFFFFF
+  rectangle "Alembic\nMigrations\n//alembic///" as Alembic #FFFFFF
+}
+
+' ============================================================
+' DATA STORAGE (Bottom Left - Light Orange)
+' ============================================================
+rectangle "**Data Storage**" as DataStorage #FDEBD0 {
+  rectangle "Processed Data\n//data/processed//\n//train.parquet//\n//val.parquet//\n//test.parquet//" as ProcessedData #FFFFFF
+  rectangle "Federated\nPartitions\n//data/federated///" as FedPartitions #FFFFFF
+  rectangle "Dataset Metadata\n//metadata.json//\n//n_users, n_items//\n//global_mean, sparsity//" as Metadata #FFFFFF
+}
+
+' ============================================================
+' EXTERNAL DEPENDENCIES (Bottom Right - Pink/Salmon)
+' ============================================================
+rectangle "**External Dependencies**" as ExtDeps #FADBD8 {
+  rectangle "PyPI Repository\n//Package Dependencies//\n//torch, fastapi, sqlalchemy//\n//pandas, numpy//" as PyPI #FFFFFF
+  rectangle "Flower Framework\n//flwr[simulation] 1.25.0//\n//FedAvgItemsOnly Strategy//\n//Simulation Backend//" as Flower #FFFFFF
+}
+
+' ============================================================
+' CONNECTIONS
+' ============================================================
+
+' Client to Server
+Browser -down-> Uvicorn : "HTTP GET/POST"
+HTTPClient -down-> Uvicorn : "HTTP GET/POST"
+
+' Server internal flow
+Uvicorn -down-> AppCode
+AppCode -down-> ServiceLayer
+
+' Server to Model Storage
+ServiceLayer -left-> MFModel : "Load/Save"
+ServiceLayer -left-> Checkpoints : "Load/Save"
+ServiceLayer -left-> Artifacts : "Load/Save"
+
+' Server to Data Storage
+ServiceLayer -down-> ProcessedData : "Read Parquet"
+ServiceLayer -down-> FedPartitions : "Read Parquet"
+ServiceLayer -down-> Metadata : "Read JSON"
+
+' Server to Database
+ServiceLayer -down-> PostgreSQL : "Read/Write\n(async)"
+
+' Python Environment
+VEnv -down-> PyInterp
+PyPI -up-> VEnv : "Install Packages"
+
+' Flower connection to Server
+Flower -up-> ServiceLayer : "Simulation\nBackend"
+
+' Alembic to PostgreSQL
+Alembic -right-> PostgreSQL : "Schema\nMigrations"
+
+@enduml
