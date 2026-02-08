@@ -19,6 +19,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Menu,
+  BarChart3,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { HealthIndicator } from "@/components/HealthIndicator";
@@ -102,6 +103,14 @@ function SidebarContent({ collapsed = false }: { collapsed?: boolean }) {
             label="Experiments"
             collapsed={collapsed}
             active={isActive("/experiments") && !location.pathname.includes("/new/")}
+          />
+
+          <NavItem
+            to="/analytics"
+            icon={BarChart3}
+            label="Analytics"
+            collapsed={collapsed}
+            active={isActive("/analytics")}
           />
 
           {/* New Experiment Dropdown */}
