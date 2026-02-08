@@ -10,6 +10,7 @@ export interface MetricFilters {
   name?: string;
   client_id?: string;
   round_number?: number;
+  context?: string;
 }
 
 export const metricsApi = {
@@ -19,8 +20,9 @@ export const metricsApi = {
     if (filters?.name) params.append("name", filters.name);
     if (filters?.client_id) params.append("client_id", filters.client_id);
     if (filters?.round_number !== undefined) params.append("round_number", String(filters.round_number));
+    if (filters?.context) params.append("context", filters.context);
     const query = params.toString();
-    return apiGet<MetricListResponse>(`/experiments/${experimentId}/metrics/${query ? `?${query}` : ""}`);
+    return apiGet<MetricListResponse>(`/experiments/${experimentId}/metrics${query ? `?${query}` : ""}`);
   },
 
   // Add single metric

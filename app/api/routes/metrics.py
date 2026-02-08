@@ -63,6 +63,7 @@ async def list_metrics(
     name: Optional[str] = Query(None, description="Filter by metric name"),
     client_id: Optional[str] = Query(None, description="Filter by client ID (federated only)"),
     round_number: Optional[int] = Query(None, ge=0, description="Filter by round number (federated only)"),
+    context: Optional[str] = Query(None, description="Filter by context (training, validation, centralized_test, client_aggregated)"),
 ):
     """List metrics for an experiment with optional filters."""
     # Apply filters in order of specificity
@@ -87,6 +88,10 @@ async def list_metrics(
         metrics = await service.get_metrics_by_name(experiment_id, name)
     else:
         metrics = await service.get_experiment_metrics(experiment_id)
+
+    # Apply context filter if specified
+    if context:
+        metrics = [m for m in metrics if m.context == context]
 
     return MetricListResponse(
         count=len(metrics),

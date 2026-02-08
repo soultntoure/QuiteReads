@@ -9,12 +9,10 @@ import {
 import { StatusBadge } from "@/components/StatusBadge";
 import { TypeBadge } from "@/components/TypeBadge";
 import { ConfigDisplay } from "@/components/ConfigDisplay";
-import { MetricsDisplay } from "@/components/MetricsDisplay";
-import { ConvergenceChart } from "@/components/ConvergenceChart";
+import { ExperimentResultsTabs } from "@/components/ExperimentResultsTabs";
 import { PageLoader } from "@/components/LoadingSpinner";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowLeft, Play, XCircle, Trash2, Calendar, Clock } from "lucide-react";
 import { format } from "date-fns";
 
@@ -23,16 +21,16 @@ export default function ExperimentDetail() {
   const navigate = useNavigate();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [failDialogOpen, setFailDialogOpen] = useState(false);
-  
+
   const { data: experiment, isLoading, isError } = useExperiment(id!);
   const startExperiment = useStartExperiment();
   const failExperiment = useFailExperiment();
   const deleteExperiment = useDeleteExperiment();
-  
+
   if (isLoading) {
     return <PageLoader />;
   }
-  
+
   if (isError || !experiment) {
     return (
       <div className="flex flex-col items-center justify-center py-12">
@@ -46,17 +44,17 @@ export default function ExperimentDetail() {
       </div>
     );
   }
-  
+
   const handleStart = () => {
     startExperiment.mutate(experiment.id);
   };
-  
+
   const handleFail = () => {
     failExperiment.mutate(experiment.id, {
       onSuccess: () => setFailDialogOpen(false),
     });
   };
-  
+
   const handleDelete = () => {
     deleteExperiment.mutate(experiment.id, {
       onSuccess: () => {
@@ -64,10 +62,7 @@ export default function ExperimentDetail() {
       },
     });
   };
-  
-  const hasMetrics = experiment.status === "completed" && 
-    (experiment.metrics.final_rmse !== null || experiment.metrics.final_mae !== null);
-  
+
   return (
     <div className="space-y-6">
       {/* Back Button */}
@@ -77,7 +72,7 @@ export default function ExperimentDetail() {
           Back to Experiments
         </Link>
       </Button>
-      
+
       {/* Header */}
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-3">
@@ -86,7 +81,7 @@ export default function ExperimentDetail() {
             <TypeBadge type={experiment.type} />
             <StatusBadge status={experiment.status} />
           </div>
-          
+
           <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
             <div className="flex items-center gap-1">
               <Calendar className="h-4 w-4" />
@@ -100,7 +95,7 @@ export default function ExperimentDetail() {
             )}
           </div>
         </div>
-        
+
         {/* Action Buttons */}
         <div className="flex gap-3">
           {experiment.status === "pending" && (
@@ -109,7 +104,7 @@ export default function ExperimentDetail() {
               Start Experiment
             </Button>
           )}
-          
+
           {experiment.status === "running" && (
             <Button
               variant="destructive"
@@ -119,7 +114,7 @@ export default function ExperimentDetail() {
               Mark as Failed
             </Button>
           )}
-          
+
           <Button
             variant="outline"
             onClick={() => setDeleteDialogOpen(true)}
@@ -129,19 +124,17 @@ export default function ExperimentDetail() {
           </Button>
         </div>
       </div>
-      
+
       {/* Configuration */}
       <ConfigDisplay experiment={experiment} />
-      
-      {/* Final Metrics (only for completed) */}
-      {hasMetrics && <MetricsDisplay metrics={experiment.metrics} />}
-      
-      {/* Convergence Chart */}
-      <ConvergenceChart
+
+      {/* Experiment Results (Metrics, Progress, History tabs) */}
+      <ExperimentResultsTabs
         experimentId={experiment.id}
         experimentType={experiment.type}
+        metrics={experiment.metrics}
       />
-      
+
       {/* Fail Confirmation Dialog */}
       <ConfirmDialog
         open={failDialogOpen}
@@ -153,7 +146,7 @@ export default function ExperimentDetail() {
         isLoading={failExperiment.isPending}
         onConfirm={handleFail}
       />
-      
+
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         open={deleteDialogOpen}

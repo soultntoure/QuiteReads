@@ -68,6 +68,7 @@ export interface MetricResponse {
   value: number;
   round_number: number | null;
   client_id: string | null;
+  context: string | null;  // 'training', 'validation', 'centralized_test', 'client_aggregated'
 }
 
 // Metrics list response

@@ -77,6 +77,7 @@ class MetricResponse(BaseModel):
     value: float = Field(..., description="Metric value")
     round_number: Optional[int] = Field(None, description="Training round number (federated only)")
     client_id: Optional[str] = Field(None, description="Client ID (federated only)")
+    context: Optional[str] = Field(None, description="Metric context (training, validation, centralized_test, client_aggregated)")
 
 
 class MetricListResponse(BaseModel):
