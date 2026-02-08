@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useExperiments, useDeleteExperiment } from "@/hooks/use-experiments";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TypeBadge } from "@/components/TypeBadge";
@@ -38,6 +38,18 @@ export default function ExperimentsList() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [experimentToDelete, setExperimentToDelete] = useState<string | null>(null);
   const [selectedExperiments, setSelectedExperiments] = useState<Set<string>>(new Set());
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Handle preselect from CTA navigation
+  useEffect(() => {
+    const preselect = searchParams.get("preselect");
+    if (preselect) {
+      setSelectedExperiments(new Set([preselect]));
+      // Clean up the URL after applying
+      searchParams.delete("preselect");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
 
   // Selection handlers
   const toggleSelection = (e: React.MouseEvent, id: string) => {

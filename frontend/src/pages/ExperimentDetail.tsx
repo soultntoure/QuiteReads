@@ -12,6 +12,7 @@ import { ConfigDisplay } from "@/components/ConfigDisplay";
 import { ExperimentResultsTabs } from "@/components/ExperimentResultsTabs";
 import { PageLoader } from "@/components/LoadingSpinner";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { CompareCTA } from "@/components/CompareCTA";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Play, XCircle, Trash2, Calendar, Clock } from "lucide-react";
 import { format } from "date-fns";
@@ -158,6 +159,18 @@ export default function ExperimentDetail() {
         isLoading={deleteExperiment.isPending}
         onConfirm={handleDelete}
       />
+
+      {/* Compare CTA for completed experiments */}
+      {experiment.status === "completed" && (
+        <>
+          {/* Spacer to prevent content from being hidden behind fixed CTA */}
+          <div className="h-20" />
+          <CompareCTA
+            experimentId={experiment.id}
+            experimentName={experiment.name}
+          />
+        </>
+      )}
     </div>
   );
 }
