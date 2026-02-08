@@ -32,7 +32,8 @@
       "Skill(module-readme-standard)",
       "Skill(module-readme-standard:*)",
       "Bash(uv add:*)",
-      "WebFetch(domain:flower.ai)"
+      "WebFetch(domain:flower.ai)",
+      "Bash(pandoc:*)"
     ],
     "deny": [],
     "ask": []
