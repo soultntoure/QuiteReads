@@ -5,13 +5,14 @@ import { GitCompare, X } from "lucide-react";
 interface CompareBarProps {
     selectedIds: string[];
     onClear: () => void;
+    maxReached?: boolean;
 }
 
 /**
  * Floating action bar that appears when 2+ experiments are selected.
  * Provides quick actions for comparison and clearing selection.
  */
-export function CompareBar({ selectedIds, onClear }: CompareBarProps) {
+export function CompareBar({ selectedIds, onClear, maxReached = false }: CompareBarProps) {
     const navigate = useNavigate();
     const count = selectedIds.length;
 
@@ -27,11 +28,12 @@ export function CompareBar({ selectedIds, onClear }: CompareBarProps) {
             <div className="flex items-center gap-3 rounded-full border bg-background/80 px-4 py-2 shadow-lg backdrop-blur-md">
                 {/* Selection count */}
                 <div className="flex items-center gap-2">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
+                    <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-semibold ${maxReached ? "bg-amber-500 text-white" : "bg-primary text-primary-foreground"
+                        }`}>
                         {count}
                     </div>
                     <span className="text-sm font-medium">
-                        experiment{count !== 1 ? "s" : ""} selected
+                        {maxReached ? "Max selected" : `experiment${count !== 1 ? "s" : ""} selected`}
                     </span>
                 </div>
 
