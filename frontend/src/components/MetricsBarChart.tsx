@@ -96,17 +96,6 @@ export function MetricsBarChart({ metrics }: MetricsBarChartProps) {
 
     return (
         <div className="space-y-6">
-            {/* Best Validation Metrics Header */}
-            <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/30 p-4 border border-emerald-200 dark:border-emerald-900">
-                <div className="flex items-center gap-2 mb-2">
-                    <Award className="h-5 w-5 text-emerald-600" />
-                    <h3 className="font-semibold text-emerald-800 dark:text-emerald-200">Best Validation Metrics</h3>
-                </div>
-                <p className="text-sm text-emerald-700 dark:text-emerald-300">
-                    These are the best validation metrics achieved during training. The model checkpoint with these metrics is saved for deployment.
-                </p>
-            </div>
-
             {/* Summary Cards */}
             <div className="grid gap-4 sm:grid-cols-3">
                 {summaryCards.map((card) => (
