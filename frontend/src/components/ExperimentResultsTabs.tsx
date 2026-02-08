@@ -3,9 +3,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { MetricsBarChart } from "@/components/MetricsBarChart";
 import { ProgressChart } from "@/components/ProgressChart";
-import { MetricsHistoryTable } from "@/components/MetricsHistoryTable";
 import type { ExperimentType, ExperimentMetricsSchema } from "@/types/experiment";
-import { TrendingDown, LineChart, Table2 } from "lucide-react";
+import { TrendingDown, LineChart } from "lucide-react";
 
 interface ExperimentResultsTabsProps {
     experimentId: string;
@@ -13,7 +12,7 @@ interface ExperimentResultsTabsProps {
     metrics: ExperimentMetricsSchema;
 }
 
-type TabValue = "metrics" | "progress" | "history";
+type TabValue = "metrics" | "progress";
 
 export function ExperimentResultsTabs({
     experimentId,
@@ -39,7 +38,7 @@ export function ExperimentResultsTabs({
 
             <CardContent className="pt-4">
                 <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as TabValue)}>
-                    <TabsList className="grid w-full grid-cols-3 mb-6">
+                    <TabsList className="grid w-full grid-cols-2 mb-6">
                         <TabsTrigger value="metrics" className="gap-2">
                             <TrendingDown className="h-4 w-4" />
                             Metrics
@@ -47,10 +46,6 @@ export function ExperimentResultsTabs({
                         <TabsTrigger value="progress" className="gap-2">
                             <LineChart className="h-4 w-4" />
                             Progress
-                        </TabsTrigger>
-                        <TabsTrigger value="history" className="gap-2">
-                            <Table2 className="h-4 w-4" />
-                            History
                         </TabsTrigger>
                     </TabsList>
 
@@ -60,13 +55,6 @@ export function ExperimentResultsTabs({
 
                     <TabsContent value="progress" className="mt-0">
                         <ProgressChart
-                            experimentId={experimentId}
-                            experimentType={experimentType}
-                        />
-                    </TabsContent>
-
-                    <TabsContent value="history" className="mt-0">
-                        <MetricsHistoryTable
                             experimentId={experimentId}
                             experimentType={experimentType}
                         />
