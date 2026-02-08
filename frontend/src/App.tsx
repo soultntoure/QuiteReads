@@ -10,6 +10,7 @@ import ExperimentDetail from "@/pages/ExperimentDetail";
 import CreateCentralizedExperiment from "@/pages/CreateCentralizedExperiment";
 import CreateFederatedExperiment from "@/pages/CreateFederatedExperiment";
 import CompareExperiments from "@/pages/CompareExperiments";
+import Analytics from "@/pages/Analytics";
 import DatasetPage from "@/pages/DatasetPage";
 import NotFound from "@/pages/NotFound";
 
@@ -32,6 +33,7 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/dataset" element={<DatasetPage />} />
+            <Route path="/analytics" element={<Analytics />} />
             <Route path="/experiments" element={<ExperimentsList />} />
             <Route path="/experiments/new/centralized" element={<CreateCentralizedExperiment />} />
             <Route path="/experiments/new/federated" element={<CreateFederatedExperiment />} />
