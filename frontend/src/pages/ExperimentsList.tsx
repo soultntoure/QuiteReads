@@ -40,6 +40,9 @@ export default function ExperimentsList() {
   const [selectedExperiments, setSelectedExperiments] = useState<Set<string>>(new Set());
   const [searchParams, setSearchParams] = useSearchParams();
 
+  // Maximum number of experiments that can be selected for comparison
+  const MAX_SELECTION = 4;
+
   // Handle preselect from CTA navigation
   useEffect(() => {
     const preselect = searchParams.get("preselect");
@@ -59,17 +62,21 @@ export default function ExperimentsList() {
       if (next.has(id)) {
         next.delete(id);
       } else {
-        next.add(id);
+        // Only add if under the limit
+        if (next.size < MAX_SELECTION) {
+          next.add(id);
+        }
       }
       return next;
     });
   };
 
   const toggleSelectAll = () => {
-    if (selectedExperiments.size === filteredExperiments.length) {
+    if (selectedExperiments.size === filteredExperiments.length || selectedExperiments.size === MAX_SELECTION) {
       setSelectedExperiments(new Set());
     } else {
-      setSelectedExperiments(new Set(filteredExperiments.map(e => e.id)));
+      // Select up to MAX_SELECTION experiments
+      setSelectedExperiments(new Set(filteredExperiments.slice(0, MAX_SELECTION).map(e => e.id)));
     }
   };
 
@@ -290,6 +297,7 @@ export default function ExperimentsList() {
       <CompareBar
         selectedIds={Array.from(selectedExperiments)}
         onClear={clearSelection}
+        maxReached={selectedExperiments.size >= MAX_SELECTION}
       />
     </div>
   );
