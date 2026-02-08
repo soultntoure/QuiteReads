@@ -13,7 +13,6 @@ import {
   LayoutDashboard,
   Database,
   FlaskConical,
-  BarChart3,
   Plus,
   Server,
   Network,
@@ -103,13 +102,6 @@ function SidebarContent({ collapsed = false }: { collapsed?: boolean }) {
             label="Experiments"
             collapsed={collapsed}
             active={isActive("/experiments") && !location.pathname.includes("/new/")}
-          />
-          <NavItem
-            to="/analytics"
-            icon={BarChart3}
-            label="Analytics"
-            collapsed={collapsed}
-            active={isActive("/analytics")}
           />
 
           {/* New Experiment Dropdown */}
