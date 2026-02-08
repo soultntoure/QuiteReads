@@ -6,8 +6,10 @@ import { TypeBadge } from "@/components/TypeBadge";
 import { EmptyState } from "@/components/EmptyState";
 import { PageLoader } from "@/components/LoadingSpinner";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
+import { CompareBar } from "@/components/CompareBar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -35,25 +37,50 @@ export default function ExperimentsList() {
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [experimentToDelete, setExperimentToDelete] = useState<string | null>(null);
-  
+  const [selectedExperiments, setSelectedExperiments] = useState<Set<string>>(new Set());
+
+  // Selection handlers
+  const toggleSelection = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    setSelectedExperiments(prev => {
+      const next = new Set(prev);
+      if (next.has(id)) {
+        next.delete(id);
+      } else {
+        next.add(id);
+      }
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedExperiments.size === filteredExperiments.length) {
+      setSelectedExperiments(new Set());
+    } else {
+      setSelectedExperiments(new Set(filteredExperiments.map(e => e.id)));
+    }
+  };
+
+  const clearSelection = () => setSelectedExperiments(new Set());
+
   const { data, isLoading } = useExperiments({
     status_filter: statusFilter !== "all" ? statusFilter : undefined,
     type_filter: typeFilter !== "all" ? typeFilter : undefined,
   });
-  
+
   const deleteExperiment = useDeleteExperiment();
-  
+
   // Filter by search query
   const filteredExperiments = data?.experiments.filter((exp) =>
     exp.name.toLowerCase().includes(searchQuery.toLowerCase())
   ) ?? [];
-  
+
   const handleDeleteClick = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     setExperimentToDelete(id);
     setDeleteDialogOpen(true);
   };
-  
+
   const handleDeleteConfirm = () => {
     if (experimentToDelete) {
       deleteExperiment.mutate(experimentToDelete, {
@@ -64,11 +91,11 @@ export default function ExperimentsList() {
       });
     }
   };
-  
+
   if (isLoading) {
     return <PageLoader />;
   }
-  
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -94,7 +121,7 @@ export default function ExperimentsList() {
           </Button>
         </div>
       </div>
-      
+
       {/* Filters */}
       <Card>
         <CardHeader className="pb-3">
@@ -136,15 +163,15 @@ export default function ExperimentsList() {
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Experiments Table */}
       <Card>
         <CardContent className="p-0">
           {filteredExperiments.length === 0 ? (
             <div className="p-6">
               <EmptyState
-                title={searchQuery || statusFilter !== "all" || typeFilter !== "all" 
-                  ? "No experiments found" 
+                title={searchQuery || statusFilter !== "all" || typeFilter !== "all"
+                  ? "No experiments found"
                   : "No experiments yet"}
                 description={
                   searchQuery || statusFilter !== "all" || typeFilter !== "all"
@@ -158,6 +185,13 @@ export default function ExperimentsList() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-[50px]">
+                    <Checkbox
+                      checked={filteredExperiments.length > 0 && selectedExperiments.size === filteredExperiments.length}
+                      onCheckedChange={toggleSelectAll}
+                      aria-label="Select all"
+                    />
+                  </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Type</TableHead>
                   <TableHead>Status</TableHead>
@@ -170,9 +204,16 @@ export default function ExperimentsList() {
                 {filteredExperiments.map((experiment) => (
                   <TableRow
                     key={experiment.id}
-                    className="cursor-pointer"
+                    className={`cursor-pointer ${selectedExperiments.has(experiment.id) ? 'bg-muted/50' : ''}`}
                     onClick={() => navigate(`/experiments/${experiment.id}`)}
                   >
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <Checkbox
+                        checked={selectedExperiments.has(experiment.id)}
+                        onCheckedChange={() => toggleSelection({ stopPropagation: () => { } } as React.MouseEvent, experiment.id)}
+                        aria-label={`Select ${experiment.name}`}
+                      />
+                    </TableCell>
                     <TableCell className="font-medium">
                       {experiment.name}
                     </TableCell>
@@ -183,7 +224,7 @@ export default function ExperimentsList() {
                       <StatusBadge status={experiment.status} />
                     </TableCell>
                     <TableCell className="hidden md:table-cell text-muted-foreground text-sm">
-                      LR: {experiment.config.learning_rate} | 
+                      LR: {experiment.config.learning_rate} |
                       Epochs: {experiment.config.epochs}
                       {experiment.type === "federated" && (
                         <> | Clients: {experiment.n_clients}</>
@@ -220,7 +261,7 @@ export default function ExperimentsList() {
           )}
         </CardContent>
       </Card>
-      
+
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         open={deleteDialogOpen}
@@ -231,6 +272,12 @@ export default function ExperimentsList() {
         variant="destructive"
         isLoading={deleteExperiment.isPending}
         onConfirm={handleDeleteConfirm}
+      />
+
+      {/* Comparison Bar */}
+      <CompareBar
+        selectedIds={Array.from(selectedExperiments)}
+        onClear={clearSelection}
       />
     </div>
   );
