@@ -14,11 +14,9 @@ import {
     SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { ExperimentResponse } from "@/types/experiment";
-import { ArrowUpDown, ExternalLink } from "lucide-react";
+import { ArrowUpDown } from "lucide-react";
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface TopExperimentsTableProps {
@@ -28,7 +26,6 @@ interface TopExperimentsTableProps {
 type SortField = "final_rmse" | "final_mae" | "training_time_seconds" | "created_at";
 
 export function TopExperimentsTable({ experiments }: TopExperimentsTableProps) {
-    const navigate = useNavigate();
     const [limit, setLimit] = useState<string>("10");
     const [sortField, setSortField] = useState<SortField>("final_rmse");
     const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc");
@@ -93,6 +90,7 @@ export function TopExperimentsTable({ experiments }: TopExperimentsTableProps) {
                     <Table>
                         <TableHeader>
                             <TableRow>
+                                <TableHead className="w-[60px]">#</TableHead>
                                 <TableHead>Name</TableHead>
                                 <TableHead>Type</TableHead>
                                 <TableHead
@@ -119,12 +117,14 @@ export function TopExperimentsTable({ experiments }: TopExperimentsTableProps) {
                                         Time (s) <SortIcon field="training_time_seconds" />
                                     </div>
                                 </TableHead>
-                                <TableHead className="text-right">Action</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {displayData.map((experiment) => (
+                            {displayData.map((experiment, index) => (
                                 <TableRow key={experiment.id}>
+                                    <TableCell className="text-muted-foreground font-mono">
+                                        {index + 1}
+                                    </TableCell>
                                     <TableCell className="font-medium">
                                         {experiment.name}
                                     </TableCell>
@@ -147,15 +147,6 @@ export function TopExperimentsTable({ experiments }: TopExperimentsTableProps) {
                                         {experiment.metrics?.training_time_seconds?.toFixed(2) ||
                                             "N/A"}
                                     </TableCell>
-                                    <TableCell className="text-right">
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => navigate(`/experiments/${experiment.id}`)}
-                                        >
-                                            <ExternalLink className="h-4 w-4" />
-                                        </Button>
-                                    </TableCell>
                                 </TableRow>
                             ))}
                             {displayData.length === 0 && (
@@ -172,6 +163,3 @@ export function TopExperimentsTable({ experiments }: TopExperimentsTableProps) {
         </Card>
     );
 }
-
-// Helper to fix the undefined 'field' variable inside sort
-const field = "final_rmse"; // Placeholder to avoid TS error before fix
