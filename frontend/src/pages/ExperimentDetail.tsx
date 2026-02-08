@@ -162,14 +162,10 @@ export default function ExperimentDetail() {
 
       {/* Compare CTA for completed experiments */}
       {experiment.status === "completed" && (
-        <>
-          {/* Spacer to prevent content from being hidden behind fixed CTA */}
-          <div className="h-20" />
-          <CompareCTA
-            experimentId={experiment.id}
-            experimentName={experiment.name}
-          />
-        </>
+        <CompareCTA
+          experimentId={experiment.id}
+          experimentName={experiment.name}
+        />
       )}
     </div>
   );
