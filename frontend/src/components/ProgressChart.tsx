@@ -240,6 +240,7 @@ export function ProgressChart({ experimentId, experimentType }: ProgressChartPro
                                     <YAxis
                                         tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
                                         tickLine={false}
+                                        domain={[0.6, 'auto']}
                                         label={{
                                             value: "Value",
                                             angle: -90,
@@ -354,10 +355,10 @@ export function ProgressChart({ experimentId, experimentType }: ProgressChartPro
                                         <TableRow
                                             key={row.epoch}
                                             className={`${row.isBest
-                                                    ? "bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-950/50"
-                                                    : index % 2 === 0
-                                                        ? "bg-background"
-                                                        : "bg-muted/20"
+                                                ? "bg-emerald-50 dark:bg-emerald-950/30 hover:bg-emerald-100 dark:hover:bg-emerald-950/50"
+                                                : index % 2 === 0
+                                                    ? "bg-background"
+                                                    : "bg-muted/20"
                                                 }`}
                                         >
                                             <TableCell className="font-medium">

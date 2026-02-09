@@ -50,41 +50,41 @@ const CHART_COLORS = [
 export function ConvergenceChart({ experimentId, experimentType }: ConvergenceChartProps) {
   const [metricType, setMetricType] = useState<MetricType>("rmse");
   const [showPerClient, setShowPerClient] = useState(false);
-  
+
   const { data, isLoading, isError } = useMetrics(experimentId, { name: metricType });
-  
+
   // Process data for chart
   const chartData = useMemo<ProcessedChartData>(() => {
     if (!data?.metrics.length) return { data: [], clientIds: [] };
-    
+
     const metrics = data.metrics;
-    
+
     if (experimentType === "federated" && showPerClient) {
       // Group by round and show per-client values
       const roundMap = new Map<number, ChartDataPoint>();
       const clientIds = new Set<string>();
-      
+
       metrics.forEach((m) => {
         if (m.round_number === null) return;
         const round = m.round_number;
         const clientId = m.client_id || "aggregate";
         clientIds.add(clientId);
-        
+
         if (!roundMap.has(round)) {
           roundMap.set(round, { round });
         }
         roundMap.get(round)![clientId] = m.value;
       });
-      
+
       return {
         data: Array.from(roundMap.values()).sort((a, b) => a.round - b.round),
         clientIds: Array.from(clientIds).sort(),
       };
     }
-    
+
     // For centralized or aggregated federated view
     const grouped = new Map<number, number[]>();
-    
+
     metrics.forEach((m) => {
       const key = m.round_number ?? 0;
       if (!grouped.has(key)) {
@@ -92,17 +92,17 @@ export function ConvergenceChart({ experimentId, experimentType }: ConvergenceCh
       }
       grouped.get(key)!.push(m.value);
     });
-    
+
     const processedData = Array.from(grouped.entries())
       .map(([round, values]) => ({
         round,
         value: values.reduce((a, b) => a + b, 0) / values.length,
       }))
       .sort((a, b) => a.round - b.round);
-    
+
     return { data: processedData, clientIds: [] };
   }, [data, experimentType, showPerClient]);
-  
+
   if (isLoading) {
     return (
       <Card>
@@ -115,7 +115,7 @@ export function ConvergenceChart({ experimentId, experimentType }: ConvergenceCh
       </Card>
     );
   }
-  
+
   if (isError) {
     return (
       <Card>
@@ -128,9 +128,9 @@ export function ConvergenceChart({ experimentId, experimentType }: ConvergenceCh
       </Card>
     );
   }
-  
+
   const hasData = chartData.data.length > 0;
-  
+
   return (
     <Card>
       <CardHeader className="pb-3">
@@ -143,7 +143,7 @@ export function ConvergenceChart({ experimentId, experimentType }: ConvergenceCh
                 <TabsTrigger value="mae">MAE</TabsTrigger>
               </TabsList>
             </Tabs>
-            
+
             {experimentType === "federated" && (
               <div className="flex items-center gap-2">
                 <Switch
@@ -178,6 +178,7 @@ export function ConvergenceChart({ experimentId, experimentType }: ConvergenceCh
                 className="text-xs"
               />
               <YAxis
+                domain={[0.6, 'auto']}
                 label={{
                   value: metricType.toUpperCase(),
                   angle: -90,
@@ -193,7 +194,7 @@ export function ConvergenceChart({ experimentId, experimentType }: ConvergenceCh
                 }}
                 labelStyle={{ color: "hsl(var(--foreground))" }}
               />
-              
+
               {experimentType === "federated" && showPerClient && chartData.clientIds.length > 0 ? (
                 <>
                   <Legend />
