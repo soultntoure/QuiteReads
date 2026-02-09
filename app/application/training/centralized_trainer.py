@@ -16,6 +16,7 @@ import torch
 import torch.nn as nn
 from pytorch_lightning.callbacks import Callback
 from torch.utils.data import DataLoader
+from typing import Callable, Any, Optional
 
 from app.application.reporting.metrics_calculator import compute_metrics
 from app.application.reporting.metrics_logger import MetricsLogger
@@ -221,6 +222,27 @@ class MetricsLoggingCallback(Callback):
             self.metrics_logger.log_validation(epoch, rmse, mae)
 
 
+class StatusCallback(Callback):
+    """Callback to report training progress via a provided function."""
+
+    def __init__(self, on_epoch_end: Callable[[int, dict[str, float]], None]):
+        """Initialize with a callback function.
+
+        Args:
+            on_epoch_end: Function to call at the end of each epoch.
+                          Receives epoch number and dictionary of metrics.
+        """
+        super().__init__()
+        self.on_epoch_end = on_epoch_end
+
+    def on_train_epoch_end(self, trainer: pl.Trainer, pl_module: pl.LightningModule) -> None:
+        """Trigger callback at the end of a training epoch."""
+        metrics = {
+            k: float(v) for k, v in trainer.callback_metrics.items()
+        }
+        self.on_epoch_end(trainer.current_epoch, metrics)
+
+
 @dataclass
 class TrainingResult:
     """Result of a centralized training run.
@@ -298,6 +320,7 @@ class CentralizedTrainer:
         self,
         metrics_logger: MetricsLogger,
         accelerator: str = "auto",
+        status_callback: Optional[Callable[[int, dict[str, float]], None]] = None,
     ) -> pl.Trainer:
         """Create and configure a PyTorch Lightning Trainer.
 
@@ -309,6 +332,8 @@ class CentralizedTrainer:
             Configured Lightning Trainer.
         """
         callbacks = [MetricsLoggingCallback(metrics_logger)]
+        if status_callback:
+            callbacks.append(StatusCallback(status_callback))
 
         trainer_kwargs: dict[str, Any] = {
             "max_epochs": self.config.n_epochs,
@@ -329,6 +354,7 @@ class CentralizedTrainer:
         train_loader: DataLoader,
         val_loader: DataLoader,
         accelerator: str = "auto",
+        on_epoch_end: Optional[Callable[[int, dict[str, float]], None]] = None,
     ) -> TrainingResult:
         """Run centralized training.
 
@@ -343,7 +369,11 @@ class CentralizedTrainer:
         self._metrics_logger = MetricsLogger()
         self._model = self._create_model()
 
-        trainer = self._create_trainer(self._metrics_logger, accelerator)
+        trainer = self._create_trainer(
+            self._metrics_logger, 
+            accelerator,
+            status_callback=on_epoch_end
+        )
 
         start_time = time.time()
         trainer.fit(self._model, train_loader, val_loader)

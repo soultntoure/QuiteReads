@@ -144,59 +144,91 @@ async def _run_centralized_training(
         checkpoint_dir=ctx.checkpoint_dir,
     )
 
+    # Define progress callback for live updates
+    loop = asyncio.get_event_loop()
+
+    def report_progress(epoch: int, metrics: dict[str, float]) -> None:
+        """Update training status and persist metrics at end of epoch."""
+        # Update status (in-memory, thread-safe enough for this use case)
+        next_epoch = min(epoch + 2, experiment.config.n_epochs)
+        training_status.update_step("training", current_epoch=next_epoch)
+
+        # Schedule metric persistence on the main event loop
+        async def _persist_metrics():
+            metrics_to_persist: list[PerformanceMetric] = []
+            
+            # Map Lightning metrics to PerformanceMetric
+            if "train_loss" in metrics:
+                metrics_to_persist.append(
+                    PerformanceMetric(
+                        name="loss",
+                        value=metrics["train_loss"],
+                        experiment_id=experiment.experiment_id,
+                        context="training",
+                        round_number=epoch,
+                    )
+                )
+            
+            if "val_rmse" in metrics:
+                metrics_to_persist.append(
+                    PerformanceMetric(
+                        name="rmse",
+                        value=metrics["val_rmse"],
+                        experiment_id=experiment.experiment_id,
+                        context="validation",
+                        round_number=epoch,
+                    )
+                )
+
+            if "val_mae" in metrics:
+                metrics_to_persist.append(
+                    PerformanceMetric(
+                        name="mae",
+                        value=metrics["val_mae"],
+                        experiment_id=experiment.experiment_id,
+                        context="validation",
+                        round_number=epoch,
+                    )
+                )
+            
+            if metrics_to_persist:
+                await ctx.metrics_service.add_metrics_batch(
+                    experiment_id=experiment.experiment_id,
+                    metrics=metrics_to_persist,
+                )
+
+        # Schedule the coroutine
+        asyncio.run_coroutine_threadsafe(_persist_metrics(), loop)
+
     # Training with epoch progress callback
     training_status.update_step("training", current_epoch=1)
-    result = trainer.train(train_loader, val_loader, accelerator="auto")
+    
+    # Run training in executor to avoid blocking the event loop
+    def run_training_sync():
+        return trainer.train(
+            train_loader, 
+            val_loader, 
+            accelerator="auto",
+            on_epoch_end=report_progress
+        )
+
+    result = await loop.run_in_executor(None, run_training_sync)
     
     training_status.update_step("validating")
 
-    # Persist per-epoch metrics
-    metrics_to_persist: list[PerformanceMetric] = []
-
-    training_losses = result.metrics_logger.get_training_losses()
-    for epoch, loss in enumerate(training_losses):
-        metrics_to_persist.append(
-            PerformanceMetric(
-                name="loss",
-                value=loss,
-                experiment_id=experiment.experiment_id,
-                context="training",
-                round_number=epoch,
-            )
-        )
-
-    validation_rmse = result.metrics_logger.get_validation_rmse()
-    for epoch, rmse in enumerate(validation_rmse):
-        metrics_to_persist.append(
-            PerformanceMetric(
-                name="rmse",
-                value=rmse,
-                experiment_id=experiment.experiment_id,
-                context="validation",
-                round_number=epoch,
-            )
-        )
-
-    validation_mae = result.metrics_logger.get_validation_mae()
-    for epoch, mae in enumerate(validation_mae):
-        if mae is not None:
-            metrics_to_persist.append(
-                PerformanceMetric(
-                    name="mae",
-                    value=mae,
-                    experiment_id=experiment.experiment_id,
-                    context="validation",
-                    round_number=epoch,
-                )
-            )
+    # Metrics are already persisted live, but we ensure the final result is consistent.
+    # We can skip re-persisting all metrics at the end, or just persist the final result.
+    # The original implementation persisted history here. 
+    # Since we persist live, we might duplicate it if we run the code below?
+    # Actually, MetricsService.add_metrics_batch just adds rows. Duplicates might be an issue depending on DB constraints.
+    # Assuming the DB allows multiple metrics for same epoch (it shouldn't, but let's be safe).
+    # Since we persist LIVE, we don't need to bulk persist at the end.
+    # However, let's keep the persistence at the end just in case live update missed something/failed?
+    # No, duplicates are bad. Let's remove the block that persists all metrics at the end.
+    # The final completion call handles saving final_rmse/mae as experiment attributes.
 
     training_status.update_step("saving")
-    if metrics_to_persist:
-        await ctx.metrics_service.add_metrics_batch(
-            experiment_id=experiment.experiment_id,
-            metrics=metrics_to_persist,
-        )
-
+    
     # Complete experiment
     await ctx.experiment_service.complete_experiment(
         experiment_id=experiment.experiment_id,
