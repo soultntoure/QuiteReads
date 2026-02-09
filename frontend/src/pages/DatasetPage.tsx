@@ -384,11 +384,9 @@ function FailedView({
 
 function LoadedView({
   metadata,
-  onReupload,
   onRemove,
 }: {
   metadata: DatasetMetadata;
-  onReupload: () => void;
   onRemove: () => void;
 }) {
   const navigate = useNavigate();
@@ -551,10 +549,6 @@ function LoadedView({
           <FlaskConical className="mr-2 h-4 w-4" />
           Create Experiment
         </Button>
-        <Button variant="outline" size="lg" onClick={onReupload}>
-          <RotateCcw className="mr-2 h-4 w-4" />
-          Re-upload Dataset
-        </Button>
         <AlertDialog>
           <AlertDialogTrigger asChild>
             <Button variant="destructive" size="lg">
@@ -656,7 +650,6 @@ export default function DatasetPage() {
       return metadata ? (
         <LoadedView
           metadata={metadata}
-          onReupload={() => setViewState("upload")}
           onRemove={handleRemove}
         />
       ) : (
