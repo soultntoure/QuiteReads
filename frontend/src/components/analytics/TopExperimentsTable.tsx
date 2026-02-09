@@ -13,11 +13,19 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { ExperimentResponse } from "@/types/experiment";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, Download } from "lucide-react";
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { downloadCSV, downloadJSON } from "@/lib/export-utils";
 
 interface TopExperimentsTableProps {
     experiments: ExperimentResponse[];
@@ -67,11 +75,48 @@ export function TopExperimentsTable({ experiments }: TopExperimentsTableProps) {
         ) : null;
     };
 
+    const handleExportCSV = () => {
+        const exportData = displayData.map((exp, index) => ({
+            "#": index + 1,
+            name: exp.name,
+            type: exp.type,
+            rmse: exp.metrics?.final_rmse?.toFixed(4) || "N/A",
+            mae: exp.metrics?.final_mae?.toFixed(4) || "N/A",
+            "time_seconds": exp.metrics?.training_time_seconds?.toFixed(2) || "N/A",
+        }));
+
+        // Generate contextual filename based on current sorting
+        const sortLabel = sortField.replace('_', '-');
+        downloadCSV(exportData, `top-experiments-sort-${sortLabel}`);
+    };
+
+    const handleExportJSON = () => {
+        // Generate contextual filename based on current sorting
+        const sortLabel = sortField.replace('_', '-');
+        downloadJSON(displayData, `top-experiments-sort-${sortLabel}`);
+    };
+
     return (
         <Card className="col-span-1 lg:col-span-2">
             <CardHeader className="flex flex-row items-center justify-between space-y-0">
                 <CardTitle>Top Experiments</CardTitle>
                 <div className="flex items-center space-x-2">
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm">
+                                <Download className="mr-2 h-4 w-4" />
+                                Export
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={handleExportCSV}>
+                                Export as CSV
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={handleExportJSON}>
+                                Export as JSON
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                     <span className="text-sm text-muted-foreground">Show:</span>
                     <Select value={limit} onValueChange={setLimit}>
                         <SelectTrigger className="w-[70px]">

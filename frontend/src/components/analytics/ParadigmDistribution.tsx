@@ -1,5 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ExperimentResponse } from "@/types/experiment";
+import { Download } from "lucide-react";
+import { downloadAsImage } from "@/lib/export-utils";
 import {
     PieChart,
     Pie,
@@ -27,13 +30,20 @@ export function ParadigmDistribution({ experiments }: ParadigmDistributionProps)
         },
     ].filter((d) => d.value > 0);
 
+    const handleExport = async () => {
+        await downloadAsImage("paradigm-distribution-chart", "paradigm-distribution-chart");
+    };
+
     return (
         <Card className="col-span-1">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle>Paradigm Distribution</CardTitle>
+                <Button variant="ghost" size="icon" onClick={handleExport} title="Export as PNG">
+                    <Download className="h-4 w-4" />
+                </Button>
             </CardHeader>
             <CardContent>
-                <div className="h-[300px] w-full">
+                <div id="paradigm-distribution-chart" className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie

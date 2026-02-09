@@ -1,4 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { ExperimentResponse } from "@/types/experiment";
 import {
     BarChart,
@@ -10,7 +11,8 @@ import {
     Legend,
     ResponsiveContainer,
 } from "recharts";
-import { ArrowDown, ArrowUp, Minus } from "lucide-react";
+import { ArrowDown, ArrowUp, Minus, Download } from "lucide-react";
+import { downloadAsImage } from "@/lib/export-utils";
 
 interface PerformanceComparisonProps {
     experiments: ExperimentResponse[];
@@ -57,12 +59,19 @@ export function PerformanceComparison({ experiments }: PerformanceComparisonProp
         },
     ];
 
+    const handleExport = async () => {
+        await downloadAsImage("performance-comparison-chart", "performance-comparison-chart");
+    };
+
     return (
         <Card className="col-span-1 lg:col-span-2">
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle>Performance Comparison</CardTitle>
+                <Button variant="ghost" size="icon" onClick={handleExport} title="Export as PNG">
+                    <Download className="h-4 w-4" />
+                </Button>
             </CardHeader>
-            <CardContent>
+            <CardContent id="performance-comparison-chart">
                 <div className="mb-6 flex items-center justify-between rounded-lg border p-4 shadow-sm">
                     <div>
                         <h4 className="text-sm font-medium text-muted-foreground">
@@ -81,8 +90,8 @@ export function PerformanceComparison({ experiments }: PerformanceComparisonProp
                     {avgRmseC > 0 && avgRmseF > 0 && (
                         <div
                             className={`flex items-center rounded-full px-3 py-1 text-sm font-medium ${isBetter
-                                    ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                                    : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
+                                ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
+                                : "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400"
                                 }`}
                         >
                             {isBetter ? (
