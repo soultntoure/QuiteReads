@@ -51,16 +51,33 @@ export async function streamChat(
 
         const decoder = new TextDecoder();
 
+        let buffer = "";
+        let eventData: string[] = [];
+
         while (true) {
             const { done, value } = await reader.read();
             if (done) break;
 
-            const text = decoder.decode(value, { stream: true });
-            const lines = text.split("\n");
+            buffer += decoder.decode(value, { stream: true });
+            const lines = buffer.split("\n");
+
+            // Keep the last partial line in the buffer
+            buffer = lines.pop() || "";
 
             for (const line of lines) {
-                if (line.startsWith("data: ")) {
-                    const data = line.slice(6);
+                const trimmedLine = line.trim();
+
+                if (!trimmedLine) {
+                    // Empty line signals end of SSE event (double newline \n\n)
+                    if (eventData.length > 0) {
+                        onChunk(eventData.join("\n"));
+                        eventData = [];
+                    }
+                    continue;
+                }
+
+                if (trimmedLine.startsWith("data: ")) {
+                    const data = trimmedLine.slice(6);
                     if (data === "[DONE]") {
                         onComplete();
                         return;
@@ -69,9 +86,14 @@ export async function streamChat(
                         onError(data);
                         return;
                     }
-                    onChunk(data);
+                    eventData.push(data);
                 }
             }
+        }
+
+        // Final event check if stream ends without final newline
+        if (eventData.length > 0) {
+            onChunk(eventData.join("\n"));
         }
 
         onComplete();

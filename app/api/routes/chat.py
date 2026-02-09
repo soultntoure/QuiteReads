@@ -44,8 +44,15 @@ async def chat(request: ChatRequest):
         """Generate SSE stream."""
         try:
             async for chunk in chat_service.chat_stream(request.message, history):
-                # SSE format: data: <content>\n\n
-                yield f"data: {chunk}\n\n"
+                if not chunk:
+                    continue
+                # Split chunk by newlines and send each line as a data: line
+                # SSE supports multi-line data by sending multiple data: lines before the double newline
+                lines = chunk.split('\n')
+                for i, line in enumerate(lines):
+                    yield f"data: {line}\n"
+                # Terminal newline for the event
+                yield "\n"
             # Signal end of stream
             yield "data: [DONE]\n\n"
         except Exception as e:

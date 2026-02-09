@@ -4,6 +4,11 @@
 
 import { cn } from "@/lib/utils";
 import { User, Sparkles } from "lucide-react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 
 interface ChatMessageProps {
     role: "user" | "assistant";
@@ -42,7 +47,7 @@ export function ChatMessage({ role, content, isStreaming }: ChatMessageProps) {
             )}>
                 <div className="flex items-center gap-2 px-1">
                     <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70">
-                        {isUser ? "You" : "Assistant"}
+                        {isUser ? "You" : "RecSys Expert"}
                     </span>
                 </div>
 
@@ -56,9 +61,19 @@ export function ChatMessage({ role, content, isStreaming }: ChatMessageProps) {
                 >
                     <div className={cn(
                         "prose prose-sm max-w-none dark:prose-invert",
+                        "prose-headings:font-bold prose-headings:tracking-tight prose-headings:mb-2 prose-headings:mt-4",
+                        "prose-p:leading-relaxed prose-p:mb-3",
+                        "prose-ul:my-2 prose-li:my-0.5",
+                        "prose-code:bg-muted prose-code:px-1 prose-code:py-0.5 prose-code:rounded prose-code:before:content-none prose-code:after:content-none",
+                        "prose-table:border prose-table:rounded-lg prose-th:bg-muted/50 prose-th:px-3 prose-th:py-2 prose-td:px-3 prose-td:py-2",
                         isUser ? "prose-p:text-primary-foreground text-primary-foreground" : "text-foreground"
                     )}>
-                        {content}
+                        <ReactMarkdown
+                            remarkPlugins={[remarkGfm, remarkMath]}
+                            rehypePlugins={[rehypeKatex]}
+                        >
+                            {content}
+                        </ReactMarkdown>
                     </div>
                     {isStreaming && (
                         <span className="inline-flex gap-1 ml-2 translate-y-0.5">

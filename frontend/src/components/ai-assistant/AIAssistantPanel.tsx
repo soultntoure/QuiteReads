@@ -258,7 +258,7 @@ export function AIAssistantPanel() {
                                 {isLoading && !streamingContent && (
                                     <div className="flex items-center gap-3 text-muted-foreground text-sm p-4 bg-muted/30 rounded-2xl border border-border/50 animate-pulse">
                                         <Loader2 className="w-4 h-4 animate-spin text-emerald-500" />
-                                        <span>Analysing codebase...</span>
+                                        <span>Consulting expert knowledge...</span>
                                     </div>
                                 )}
                             </div>
