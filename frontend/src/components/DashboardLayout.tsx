@@ -10,6 +10,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   LayoutDashboard,
   Database,
   FlaskConical,
@@ -25,6 +30,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 import { HealthIndicator } from "@/components/HealthIndicator";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { AIAssistantPanel } from "@/components/ai-assistant";
+import { useDatasetMetadata } from "@/hooks/use-dataset";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -56,7 +62,13 @@ function NavItem({ to, icon: Icon, label, collapsed, active }: NavItemProps) {
   );
 }
 
-function SidebarContent({ collapsed = false }: { collapsed?: boolean }) {
+function SidebarContent({
+  collapsed = false,
+  datasetReady = false,
+}: {
+  collapsed?: boolean;
+  datasetReady?: boolean;
+}) {
   const location = useLocation();
 
   const isActive = (path: string) => {
@@ -115,34 +127,55 @@ function SidebarContent({ collapsed = false }: { collapsed?: boolean }) {
           />
 
           {/* New Experiment Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <button
-                className={cn(
-                  "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
-                  collapsed && "justify-center px-2"
-                )}
-              >
-                <Plus className="h-4 w-4 shrink-0" />
-                {!collapsed && <span>New Experiment</span>}
-              </button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent side={collapsed ? "right" : "bottom"} align="start">
-              <DropdownMenuItem asChild>
-                <Link to="/experiments/new/centralized" className="flex items-center gap-2">
-                  <Server className="h-4 w-4" />
-                  Centralized
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/experiments/new/federated" className="flex items-center gap-2">
-                  <Network className="h-4 w-4" />
-                  Federated
-                </Link>
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {datasetReady ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "text-muted-foreground hover:bg-accent hover:text-accent-foreground",
+                    collapsed && "justify-center px-2"
+                  )}
+                >
+                  <Plus className="h-4 w-4 shrink-0" />
+                  {!collapsed && <span>New Experiment</span>}
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent side={collapsed ? "right" : "bottom"} align="start">
+                <DropdownMenuItem asChild>
+                  <Link to="/experiments/new/centralized" className="flex items-center gap-2">
+                    <Server className="h-4 w-4" />
+                    Centralized
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link to="/experiments/new/federated" className="flex items-center gap-2">
+                    <Network className="h-4 w-4" />
+                    Federated
+                  </Link>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  disabled
+                  className={cn(
+                    "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium",
+                    "text-muted-foreground/50 cursor-not-allowed",
+                    collapsed && "justify-center px-2"
+                  )}
+                >
+                  <Plus className="h-4 w-4 shrink-0" />
+                  {!collapsed && <span>New Experiment</span>}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                Upload a dataset first
+              </TooltipContent>
+            </Tooltip>
+          )}
         </nav>
       </ScrollArea>
     </div>
@@ -151,6 +184,8 @@ function SidebarContent({ collapsed = false }: { collapsed?: boolean }) {
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
   const [collapsed, setCollapsed] = useState(false);
+  const { data: metadata } = useDatasetMetadata();
+  const datasetReady = metadata?.is_loaded ?? false;
 
   return (
     <div className="flex min-h-screen w-full">
@@ -161,7 +196,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           collapsed ? "w-16" : "w-64"
         )}
       >
-        <SidebarContent collapsed={collapsed} />
+        <SidebarContent collapsed={collapsed} datasetReady={datasetReady} />
 
         {/* Collapse Button */}
         <Button
@@ -195,7 +230,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="w-64 p-0">
-              <SidebarContent />
+              <SidebarContent datasetReady={datasetReady} />
             </SheetContent>
           </Sheet>
 

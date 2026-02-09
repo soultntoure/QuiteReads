@@ -8,7 +8,7 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query, Response, status
 
-from app.api.dependencies import get_experiment_service
+from app.api.dependencies import get_experiment_service, require_dataset_loaded
 from app.api.schemas.experiment_schemas import (
     CompleteExperimentRequest,
     CreateCentralizedExperimentRequest,
@@ -30,7 +30,11 @@ ExperimentServiceDep = Annotated[ExperimentService, Depends(get_experiment_servi
 
 
 @router.post("/centralized", response_model=ExperimentResponse, status_code=status.HTTP_201_CREATED)
-async def create_centralized_experiment(request: CreateCentralizedExperimentRequest, service: ExperimentServiceDep):
+async def create_centralized_experiment(
+    request: CreateCentralizedExperimentRequest,
+    service: ExperimentServiceDep,
+    _: None = Depends(require_dataset_loaded),
+):
     """Create a new centralized experiment"""
     experiment = await service.create_centralized_experiment(
         name=request.name,
@@ -40,7 +44,11 @@ async def create_centralized_experiment(request: CreateCentralizedExperimentRequ
 
 
 @router.post("/federated", response_model=ExperimentResponse, status_code=status.HTTP_201_CREATED)
-async def create_federated_experiment(request: CreateFederatedExperimentRequest, service: ExperimentServiceDep):
+async def create_federated_experiment(
+    request: CreateFederatedExperimentRequest,
+    service: ExperimentServiceDep,
+    _: None = Depends(require_dataset_loaded),
+):
     """Create a new federated experiment"""
     from app.utils.types import AggregationStrategy
 

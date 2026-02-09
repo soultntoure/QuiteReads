@@ -6,6 +6,7 @@ Uses file-based persistence (no database).
 
 import json
 import logging
+import shutil
 from pathlib import Path
 from typing import Optional
 
@@ -35,6 +36,14 @@ class DatasetService:
 
     def is_dataset_loaded(self) -> bool:
         return (self.processed_dir / "metadata.json").exists()
+
+    def remove_dataset(self) -> None:
+        """Remove all processed dataset artifacts and splits."""
+        splits_dir = self.data_dir / "splits"
+        if self.processed_dir.exists():
+            shutil.rmtree(self.processed_dir)
+        if splits_dir.exists():
+            shutil.rmtree(splits_dir)
 
     def get_metadata(self) -> Optional[dict]:
         metadata_path = self.processed_dir / "metadata.json"

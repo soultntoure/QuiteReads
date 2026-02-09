@@ -3,11 +3,12 @@
 Dependency injection setup for API routes and services.
 """
 from typing import Annotated
-from fastapi import Depends
+from fastapi import Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.infrastructure import get_session
 from app.infrastructure.repositories import ExperimentRepository, MetricsRepository
 from app.application.services import ExperimentService, MetricsService
+from app.application.services.dataset_service import DatasetService
 
 
 def get_experiment_service(
@@ -40,3 +41,12 @@ def get_metrics_service(
     experiment_repo = ExperimentRepository(db)
     metrics_repo = MetricsRepository(db)
     return MetricsService(metrics_repo, experiment_repo)
+
+
+def require_dataset_loaded() -> None:
+    """Raises 409 if no processed dataset exists."""
+    if not DatasetService().is_dataset_loaded():
+        raise HTTPException(
+            status_code=409,
+            detail="No processed dataset available. Upload and process a dataset first.",
+        )

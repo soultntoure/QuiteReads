@@ -1,4 +1,4 @@
-import { apiGet, apiUploadFile } from "./client";
+import { apiDelete, apiGet, apiUploadFile } from "./client";
 import type {
   DatasetMetadata,
   DatasetUploadConfig,
@@ -20,4 +20,6 @@ export const datasetApi = {
   getStatus: () => apiGet<PreprocessingStatus>("/dataset/status"),
 
   getMetadata: () => apiGet<DatasetMetadata>("/dataset/metadata"),
+
+  remove: () => apiDelete<void>("/dataset"),
 };

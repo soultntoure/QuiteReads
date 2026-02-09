@@ -8,6 +8,7 @@ import {
   useDatasetMetadata,
   usePreprocessingStatus,
   useUploadDataset,
+  useRemoveDataset,
   datasetKeys,
 } from "@/hooks/use-dataset";
 import type { DatasetMetadata, PreprocessingStatus } from "@/types/dataset";
@@ -32,10 +33,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { SummaryCard } from "@/components/SummaryCard";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import {
-  Database,
   Upload,
   CheckCircle2,
   Circle,
@@ -48,7 +59,14 @@ import {
   RotateCcw,
   FileText,
   Info,
+  Trash2,
 } from "lucide-react";
+
+// =============================================================================
+// Types
+// =============================================================================
+
+type ViewState = "loading" | "upload" | "processing" | "failed" | "loaded";
 
 // =============================================================================
 // Form Schema
@@ -367,9 +385,11 @@ function FailedView({
 function LoadedView({
   metadata,
   onReupload,
+  onRemove,
 }: {
   metadata: DatasetMetadata;
   onReupload: () => void;
+  onRemove: () => void;
 }) {
   const navigate = useNavigate();
   const stats = metadata.statistics;
@@ -535,6 +555,27 @@ function LoadedView({
           <RotateCcw className="mr-2 h-4 w-4" />
           Re-upload Dataset
         </Button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="destructive" size="lg">
+              <Trash2 className="mr-2 h-4 w-4" />
+              Remove Dataset
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove Dataset?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This will delete all processed data, splits, and metadata.
+                You will need to upload and process a dataset again before running experiments.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={onRemove}>Remove</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </div>
   );
@@ -548,80 +589,83 @@ export default function DatasetPage() {
   const queryClient = useQueryClient();
   const { data: metadata, isLoading: metaLoading } = useDatasetMetadata();
   const uploadMutation = useUploadDataset();
+  const removeMutation = useRemoveDataset();
 
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [showUpload, setShowUpload] = useState(false);
+  const [viewState, setViewState] = useState<ViewState>("loading");
 
-  const { data: status } = usePreprocessingStatus(isProcessing);
+  const { data: status } = usePreprocessingStatus(viewState === "processing");
 
-  // Watch for processing completion or failure
+  // Determine initial view state from server data
+  useEffect(() => {
+    if (metaLoading) return;
+
+    if (metadata?.is_loaded) {
+      setViewState("loaded");
+    } else {
+      // Not loaded yet — check if server is mid-processing
+      setViewState("processing");
+    }
+  }, [metaLoading, metadata?.is_loaded]);
+
+  // React to preprocessing status changes
   useEffect(() => {
     if (!status) return;
 
     if (status.status === "completed") {
-      setIsProcessing(false);
       queryClient.invalidateQueries({ queryKey: datasetKeys.metadata() });
+      setViewState("loaded");
     } else if (status.status === "failed") {
-      setIsProcessing(false);
-    }
-  }, [status?.status, queryClient]);
-
-  // Check if server is mid-processing on page load
-  useEffect(() => {
-    if (metadata && !metaLoading) {
-      // If not loaded, check if server is currently processing
-      if (!metadata.is_loaded) {
-        setIsProcessing(true);
+      setViewState("failed");
+    } else if (status.status === "idle" && viewState === "processing") {
+      // Server is not processing and no dataset — show upload
+      if (!metadata?.is_loaded) {
+        setViewState("upload");
       }
     }
-  }, [metadata, metaLoading]);
-
-  // Stop initial processing check if status returns idle
-  useEffect(() => {
-    if (status?.status === "idle" && !uploadMutation.isPending) {
-      setIsProcessing(false);
-    }
-  }, [status?.status, uploadMutation.isPending]);
+  }, [status?.status, queryClient, viewState, metadata?.is_loaded]);
 
   const handleUpload = (file: File, values: UploadFormValues) => {
-    setIsProcessing(true);
-    setShowUpload(false);
+    setViewState("processing");
+    // Clear stale metadata cache immediately so old data can't trigger LoadedView
+    queryClient.setQueryData(datasetKeys.metadata(), null);
     uploadMutation.mutate({ file, config: values });
   };
 
-  const handleReupload = () => {
-    setShowUpload(true);
+  const handleRemove = () => {
+    removeMutation.mutate(undefined, {
+      onSuccess: () => setViewState("upload"),
+    });
   };
 
-  const handleRetry = () => {
-    setShowUpload(true);
-    setIsProcessing(false);
-  };
+  switch (viewState) {
+    case "loading":
+      return (
+        <div className="flex items-center justify-center py-20">
+          <LoadingSpinner />
+        </div>
+      );
 
-  // Loading state
-  if (metaLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <LoadingSpinner />
-      </div>
-    );
+    case "failed":
+      return <FailedView error={status?.error} onRetry={() => setViewState("upload")} />;
+
+    case "processing":
+      return <ProcessingView status={status} />;
+
+    case "loaded":
+      return metadata ? (
+        <LoadedView
+          metadata={metadata}
+          onReupload={() => setViewState("upload")}
+          onRemove={handleRemove}
+        />
+      ) : (
+        <div className="flex items-center justify-center py-20">
+          <LoadingSpinner />
+        </div>
+      );
+
+    case "upload":
+    default:
+      return <UploadView onUpload={handleUpload} isPending={uploadMutation.isPending} />;
   }
-
-  // Failed state
-  if (status?.status === "failed" && !showUpload) {
-    return <FailedView error={status.error} onRetry={handleRetry} />;
-  }
-
-  // Processing state
-  if (isProcessing && status?.status === "processing") {
-    return <ProcessingView status={status} />;
-  }
-
-  // Loaded state (show stats) — unless user clicked "Re-upload"
-  if (metadata?.is_loaded && !showUpload) {
-    return <LoadedView metadata={metadata} onReupload={handleReupload} />;
-  }
-
-  // Upload state (default)
-  return <UploadView onUpload={handleUpload} isPending={uploadMutation.isPending} />;
 }

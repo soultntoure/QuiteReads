@@ -50,3 +50,26 @@ export function useUploadDataset() {
     },
   });
 }
+
+export function useRemoveDataset() {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: () => datasetApi.remove(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: datasetKeys.metadata() });
+      toast({
+        title: "Dataset Removed",
+        description: "Processed dataset has been removed.",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Failed to Remove",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+}

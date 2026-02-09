@@ -15,11 +15,13 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { ArrowLeft, Server } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertTriangle, ArrowLeft, Server } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Link } from "react-router-dom";
 import { PowerOfTwoInput } from "@/components/ui/power-of-two-input";
 import { InfoTooltip } from "@/components/ui/info-tooltip";
+import { useDatasetMetadata } from "@/hooks/use-dataset";
 
 // Helper function to check if a number is a power of 2
 const isPowerOfTwo = (n: number): boolean => {
@@ -59,6 +61,8 @@ type FormValues = z.infer<typeof formSchema>;
 export default function CreateCentralizedExperiment() {
   const navigate = useNavigate();
   const createExperiment = useCreateCentralizedExperiment();
+  const { data: metadata, isLoading: metaLoading } = useDatasetMetadata();
+  const datasetReady = metadata?.is_loaded ?? false;
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -101,6 +105,19 @@ export default function CreateCentralizedExperiment() {
           Back to Experiments
         </Link>
       </Button>
+
+      {!metaLoading && !datasetReady && (
+        <Alert variant="destructive">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertDescription>
+            No processed dataset available.{" "}
+            <Link to="/dataset" className="underline font-medium">
+              Upload a dataset
+            </Link>{" "}
+            before creating an experiment.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Form Card */}
       <Card>
@@ -307,7 +324,7 @@ export default function CreateCentralizedExperiment() {
                 <Button type="button" variant="outline" onClick={() => navigate(-1)}>
                   Cancel
                 </Button>
-                <Button type="submit" disabled={createExperiment.isPending}>
+                <Button type="submit" disabled={createExperiment.isPending || !datasetReady}>
                   {createExperiment.isPending && <LoadingSpinner size="sm" className="mr-2" />}
                   Create Experiment
                 </Button>

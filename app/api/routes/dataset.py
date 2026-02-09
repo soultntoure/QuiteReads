@@ -7,7 +7,7 @@ polling preprocessing status, and retrieving dataset statistics.
 import asyncio
 import logging
 
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile, status
+from fastapi import APIRouter, File, Form, HTTPException, Response, UploadFile, status
 
 from app.api.schemas.dataset_schemas import (
     DatasetMetadataResponse,
@@ -15,7 +15,7 @@ from app.api.schemas.dataset_schemas import (
     PreprocessingStatusResponse,
     UploadResponse,
 )
-from app.application.data.preprocessing_status import is_processing, update_status
+from app.application.data.preprocessing_status import is_processing, reset_status, update_status
 from app.application.services.dataset_service import DatasetService
 
 logger = logging.getLogger(__name__)
@@ -127,3 +127,19 @@ async def get_dataset_metadata():
         val_size=metadata.get("val_size"),
         test_size=metadata.get("test_size"),
     )
+
+
+@router.delete("", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_dataset():
+    """Remove processed dataset artifacts. Returns to upload-ready state."""
+    if is_processing():
+        raise HTTPException(
+            status_code=409,
+            detail="Cannot remove dataset while preprocessing is in progress.",
+        )
+
+    service = _get_service()
+    service.remove_dataset()
+    reset_status()
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
