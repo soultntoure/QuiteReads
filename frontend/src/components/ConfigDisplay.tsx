@@ -17,14 +17,13 @@ export function ConfigDisplay({ experiment }: ConfigDisplayProps) {
     { label: "Learning Rate", value: config.learning_rate },
     { label: "Batch Size", value: config.batch_size },
     { label: "Epochs", value: config.epochs },
-    { label: "Model Type", value: config.model_type },
+    { label: "Regularization", value: config.regularization },
   ];
   
-  const federatedItems: ConfigItem[] = experiment.type === "federated" 
+  const federatedItems: ConfigItem[] = experiment.type === "federated"
     ? [
         { label: "Clients", value: experiment.n_clients ?? "-" },
         { label: "Rounds", value: experiment.n_rounds ?? "-" },
-        { label: "Aggregation", value: experiment.aggregation_strategy ?? "-" },
       ]
     : [];
   
