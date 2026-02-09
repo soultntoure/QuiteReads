@@ -19,6 +19,7 @@ import { ArrowLeft, Network } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Link } from "react-router-dom";
 import { PowerOfTwoInput } from "@/components/ui/power-of-two-input";
+import { InfoTooltip } from "@/components/ui/info-tooltip";
 
 // Helper function to check if a number is a power of 2
 const isPowerOfTwo = (n: number): boolean => {
@@ -157,7 +158,18 @@ export default function CreateFederatedExperiment() {
                     name="n_factors"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Latent Factors</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Latent Factors
+                          <InfoTooltip
+                            title="Latent Factors"
+                            description="The number of hidden dimensions used to represent users and items in the matrix factorization model. Higher values capture more complex patterns but increase computation."
+                            tips={[
+                              "Start with 20-50 for most datasets",
+                              "Increase if model underfits",
+                              "Decrease if training is too slow",
+                            ]}
+                          />
+                        </FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -179,7 +191,18 @@ export default function CreateFederatedExperiment() {
                     name="learning_rate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Learning Rate</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Learning Rate
+                          <InfoTooltip
+                            title="Learning Rate"
+                            description="Controls how much the model adjusts its weights during each training step. A smaller rate leads to more stable but slower learning."
+                            tips={[
+                              "0.01-0.02 is a good starting point",
+                              "Lower if training is unstable",
+                              "Higher for faster convergence",
+                            ]}
+                          />
+                        </FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -204,7 +227,18 @@ export default function CreateFederatedExperiment() {
                     name="regularization"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Regularization</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Regularization
+                          <InfoTooltip
+                            title="Regularization (L2)"
+                            description="Adds a penalty for large model weights to prevent overfitting. Higher values constrain the model more, improving generalization but potentially reducing accuracy."
+                            tips={[
+                              "0.001-0.01 works for most cases",
+                              "Increase if model overfits",
+                              "Set to 0 to disable",
+                            ]}
+                          />
+                        </FormLabel>
                         <FormControl>
                           <Input
                             type="number"
@@ -227,7 +261,18 @@ export default function CreateFederatedExperiment() {
                     name="batch_size"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Batch Size</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Batch Size
+                          <InfoTooltip
+                            title="Batch Size"
+                            description="The number of training samples processed together before updating the model. Larger batches are faster but use more memory and may generalize differently."
+                            tips={[
+                              "32-128 is typical for most GPUs",
+                              "Larger batches = smoother gradients",
+                              "Smaller batches = more regularization effect",
+                            ]}
+                          />
+                        </FormLabel>
                         <FormControl>
                           <PowerOfTwoInput
                             value={field.value}
@@ -250,7 +295,18 @@ export default function CreateFederatedExperiment() {
                   name="local_epochs"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Local Epochs</FormLabel>
+                      <FormLabel className="flex items-center gap-2">
+                        Local Epochs
+                        <InfoTooltip
+                          title="Local Epochs"
+                          description="The number of training passes each client performs on their local data before sending updates to the server. More local epochs reduce communication but may cause drift."
+                          tips={[
+                            "1-5 epochs balances communication/computation",
+                            "More epochs = less communication overhead",
+                            "Fewer epochs = better convergence stability",
+                          ]}
+                        />
+                      </FormLabel>
                       <FormControl>
                         <Input type="number" min="1" {...field} />
                       </FormControl>
@@ -272,7 +328,18 @@ export default function CreateFederatedExperiment() {
                     name="n_clients"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Number of Clients</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Number of Clients
+                          <InfoTooltip
+                            title="Number of Clients"
+                            description="The total number of distributed participants in the federated learning process. Each client holds a portion of the data and trains locally."
+                            tips={[
+                              "More clients = better data distribution",
+                              "Simulates real-world decentralized scenarios",
+                              "Higher counts increase aggregation complexity",
+                            ]}
+                          />
+                        </FormLabel>
                         <FormControl>
                           <Input type="number" min="2" {...field} />
                         </FormControl>
@@ -289,7 +356,18 @@ export default function CreateFederatedExperiment() {
                     name="n_rounds"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Training Rounds</FormLabel>
+                        <FormLabel className="flex items-center gap-2">
+                          Training Rounds
+                          <InfoTooltip
+                            title="Training Rounds"
+                            description="The number of global aggregation rounds where client updates are combined. Each round involves local training followed by server-side model averaging."
+                            tips={[
+                              "More rounds = better convergence",
+                              "Each round has communication overhead",
+                              "Monitor metrics to find optimal count",
+                            ]}
+                          />
+                        </FormLabel>
                         <FormControl>
                           <Input type="number" min="1" {...field} />
                         </FormControl>
