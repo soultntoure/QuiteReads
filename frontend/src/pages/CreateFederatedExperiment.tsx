@@ -18,6 +18,7 @@ import {
 import { ArrowLeft, Network } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Link } from "react-router-dom";
+import { PowerOfTwoInput } from "@/components/ui/power-of-two-input";
 
 // Helper function to check if a number is a power of 2
 const isPowerOfTwo = (n: number): boolean => {
@@ -228,10 +229,15 @@ export default function CreateFederatedExperiment() {
                       <FormItem>
                         <FormLabel>Batch Size</FormLabel>
                         <FormControl>
-                          <Input type="number" {...field} />
+                          <PowerOfTwoInput
+                            value={field.value}
+                            onChange={field.onChange}
+                            min={2}
+                            max={1024}
+                          />
                         </FormControl>
                         <FormDescription>
-                          Samples per batch (must be power of 2)
+                          Samples per batch (power of 2)
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
