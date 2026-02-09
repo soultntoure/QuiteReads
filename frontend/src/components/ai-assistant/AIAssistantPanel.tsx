@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { MessageSquare, X, Send, Sparkles, Loader2, Maximize2, Minimize2, GripVertical } from "lucide-react";
+import { MessageSquare, X, Send, Sparkles, Loader2, Maximize2, Minimize2, GripVertical, Plus } from "lucide-react";
 import { ChatMessage } from "./ChatMessage";
 import { SuggestionChips } from "./SuggestionChips";
 import { streamChat, type ChatMessage as ChatMessageType } from "@/api/chat";
@@ -132,6 +132,14 @@ export function AIAssistantPanel() {
         handleSend(suggestion);
     };
 
+    const handleNewChat = useCallback(() => {
+        if (isLoading) return;
+        setMessages([]);
+        setStreamingContent("");
+        setInput("");
+        accumulatedContentRef.current = "";
+    }, [isLoading]);
+
     return (
         <>
             {/* Toggle Button */}
@@ -183,6 +191,16 @@ export function AIAssistantPanel() {
                         </div>
                     </div>
                     <div className="flex items-center gap-1">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            onClick={handleNewChat}
+                            title="New Conversation"
+                            disabled={isLoading || (messages.length === 0 && !streamingContent)}
+                        >
+                            <Plus className="h-4 w-4" />
+                        </Button>
                         <Button
                             variant="ghost"
                             size="icon"
