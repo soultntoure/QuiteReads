@@ -618,7 +618,8 @@ export default function DatasetPage() {
       setViewState("failed");
     } else if (status.status === "idle" && viewState === "processing") {
       // Server is not processing and no dataset — show upload
-      if (!metadata?.is_loaded) {
+      // BUT only if we are not currently uploading a file (mutation pending)
+      if (!metadata?.is_loaded && !uploadMutation.isPending) {
         setViewState("upload");
       }
     }
