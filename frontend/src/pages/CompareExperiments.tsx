@@ -6,7 +6,6 @@ import { TypeBadge } from "@/components/TypeBadge";
 import { StatusBadge } from "@/components/StatusBadge";
 import { PageLoader } from "@/components/LoadingSpinner";
 import { PerformanceSection } from "@/components/comparison/PerformanceSection";
-import { ScalabilitySection } from "@/components/comparison/ScalabilitySection";
 import { TimeSection } from "@/components/comparison/TimeSection";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,8 +35,7 @@ export default function CompareExperiments() {
             .filter((e): e is ExperimentResponse => e !== undefined);
     }, [experimentsData, experimentIds]);
 
-    // Check if we have any federated-to-federated comparison
-    const allFederated = experiments.length >= 2 && experiments.every(e => e.type === "federated");
+    // Check if we have any mixed type comparison
     const hasMixedTypes = experiments.some(e => e.type === "centralized") &&
         experiments.some(e => e.type === "federated");
 
@@ -110,8 +108,8 @@ export default function CompareExperiments() {
                             <div
                                 key={exp.id}
                                 className={`relative rounded-lg border p-4 transition-all ${exp.id === baselineId
-                                        ? "border-primary bg-primary/5 ring-2 ring-primary/20"
-                                        : "hover:border-muted-foreground/50"
+                                    ? "border-primary bg-primary/5 ring-2 ring-primary/20"
+                                    : "hover:border-muted-foreground/50"
                                     }`}
                             >
                                 {exp.id === baselineId && (
@@ -158,13 +156,7 @@ export default function CompareExperiments() {
                 baselineId={baselineId}
             />
 
-            {/* Scalability Section (only for federated-to-federated) */}
-            {allFederated && (
-                <ScalabilitySection
-                    experiments={experiments}
-                    baselineId={baselineId}
-                />
-            )}
+
 
             {/* Time Section */}
             <TimeSection
