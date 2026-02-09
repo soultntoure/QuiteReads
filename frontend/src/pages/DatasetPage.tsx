@@ -11,7 +11,7 @@ import {
   useRemoveDataset,
   datasetKeys,
 } from "@/hooks/use-dataset";
-import type { DatasetMetadata, PreprocessingStatus } from "@/types/dataset";
+import type { DatasetMetadata, PreprocessingStatus, DatasetUploadConfig } from "@/types/dataset";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -623,7 +623,7 @@ export default function DatasetPage() {
     setViewState("processing");
     // Clear stale metadata cache immediately so old data can't trigger LoadedView
     queryClient.setQueryData(datasetKeys.metadata(), null);
-    uploadMutation.mutate({ file, config: values });
+    uploadMutation.mutate({ file, config: values as DatasetUploadConfig });
   };
 
   const handleRemove = () => {
