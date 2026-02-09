@@ -6,7 +6,7 @@ Entry point for the FastAPI application and global configuration.
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.routes import health, experiments, metrics, dataset
+from app.api.routes import health, experiments, metrics, dataset, chat
 from app.utils.exceptions import (
     ConfigurationError,
     DataPreprocessError,
@@ -65,6 +65,7 @@ app.include_router(health.router)
 app.include_router(experiments.router)
 app.include_router(metrics.router)
 app.include_router(dataset.router)
+app.include_router(chat.router)
 
 
 if __name__ == "__main__":

@@ -24,6 +24,7 @@ import {
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { HealthIndicator } from "@/components/HealthIndicator";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { AIAssistantPanel } from "@/components/ai-assistant";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -213,6 +214,9 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           {children}
         </main>
       </div>
+
+      {/* AI Assistant Panel */}
+      <AIAssistantPanel />
     </div>
   );
 }

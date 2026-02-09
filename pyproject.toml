@@ -28,7 +28,7 @@ dev-dependencies = [
   "pandas",
   "numpy",
   "torch",
-  "pytorch-lightning",
+  "lightning==2.6.1",
   "scikit-surprise",
   "flwr[simulation]",
   "pytest",
@@ -42,6 +42,9 @@ dev-dependencies = [
   "ruff",
   "asyncpg",
   "aiosqlite",
+  "langchain",
+  "langchain-google-genai",
+  "python-dotenv",
 ]
 
 # Pytest config
