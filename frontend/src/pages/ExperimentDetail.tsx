@@ -6,10 +6,12 @@ import {
   useFailExperiment,
   useDeleteExperiment,
 } from "@/hooks/use-experiments";
+import { useTrainingStatus } from "@/hooks/use-training-status";
 import { StatusBadge } from "@/components/StatusBadge";
 import { TypeBadge } from "@/components/TypeBadge";
 import { ConfigDisplay } from "@/components/ConfigDisplay";
 import { ExperimentResultsTabs } from "@/components/ExperimentResultsTabs";
+import { TrainingProgress } from "@/components/TrainingProgress";
 import { PageLoader } from "@/components/LoadingSpinner";
 import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { CompareCTA } from "@/components/CompareCTA";
@@ -27,6 +29,10 @@ export default function ExperimentDetail() {
   const startExperiment = useStartExperiment();
   const failExperiment = useFailExperiment();
   const deleteExperiment = useDeleteExperiment();
+
+  // Poll training status when experiment is running
+  const isRunning = experiment?.status === "running";
+  const { data: trainingStatus } = useTrainingStatus(id!, isRunning);
 
   if (isLoading) {
     return <PageLoader />;
@@ -128,6 +134,14 @@ export default function ExperimentDetail() {
 
       {/* Configuration */}
       <ConfigDisplay experiment={experiment} />
+
+      {/* Training Progress (for running experiments) */}
+      {experiment.status === "running" && (
+        <TrainingProgress
+          status={trainingStatus}
+          experimentType={experiment.type}
+        />
+      )}
 
       {/* Experiment Results (Metrics, Progress, History tabs) */}
       <ExperimentResultsTabs

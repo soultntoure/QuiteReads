@@ -135,3 +135,19 @@ async def delete_experiment(experiment_id: str, service: ExperimentServiceDep):
     await service.delete_experiment(experiment_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
 
+
+@router.get("/{experiment_id}/training-status")
+async def get_training_status(experiment_id: str):
+    """Poll current training status for a running experiment.
+    
+    Returns the current training progress including:
+    - Current step (loading_data, training, saving, etc.)
+    - Epoch/round progress for training step
+    - Status messages
+    
+    Poll this endpoint every ~1 second while experiment status is 'running'.
+    """
+    from app.application import training_status
+    
+    status_data = training_status.get_status(experiment_id)
+    return status_data.to_dict()

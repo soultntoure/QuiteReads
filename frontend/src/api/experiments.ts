@@ -6,6 +6,7 @@ import type {
   CreateFederatedExperimentRequest,
   CompleteExperimentRequest,
   HealthResponse,
+  TrainingStatus,
 } from "@/types/experiment";
 
 export interface ExperimentFilters {
@@ -49,4 +50,7 @@ export const experimentsApi = {
 
   // Delete experiment
   delete: (id: string) => apiDelete<void>(`/experiments/${id}`),
+
+  // Get training status for a running experiment
+  getTrainingStatus: (id: string) => apiGet<TrainingStatus>(`/experiments/${id}/training-status`),
 };

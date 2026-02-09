@@ -99,3 +99,19 @@ export interface ErrorResponse {
 export interface HealthResponse {
   status: string;
 }
+
+// Training progress status for running experiments
+export interface TrainingStatus {
+  experiment_id: string | null;
+  experiment_type: "centralized" | "federated" | null;
+  status: "idle" | "training" | "completed" | "failed";
+  step: string;
+  step_number: number;
+  total_steps: number;
+  message: string;
+  current_epoch: number | null;
+  total_epochs: number | null;
+  current_round: number | null;
+  total_rounds: number | null;
+  error: string | null;
+}

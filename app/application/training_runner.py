@@ -4,12 +4,15 @@ Provides async functions to run training experiments in the background,
 independent of the API request lifecycle.
 """
 
+import asyncio
 import logging
 from dataclasses import dataclass
+from functools import partial
 from pathlib import Path
 from typing import Optional
 
 from app.application.services import ExperimentService, MetricsService
+from app.application import training_status
 from app.core.experiments import CentralizedExperiment, FederatedExperiment
 from app.infrastructure.database import get_session_factory
 from app.infrastructure.repositories import ExperimentRepository, MetricsRepository
@@ -79,8 +82,20 @@ async def run_experiment_training(
 
             # Run appropriate training based on experiment type
             if isinstance(experiment, CentralizedExperiment):
+                # Start training status tracking
+                training_status.start_training(
+                    experiment_id=experiment_id,
+                    experiment_type="centralized",
+                    total_epochs=experiment.config.n_epochs,
+                )
                 await _run_centralized_training(ctx, experiment)
             elif isinstance(experiment, FederatedExperiment):
+                # Start training status tracking
+                training_status.start_training(
+                    experiment_id=experiment_id,
+                    experiment_type="federated",
+                    total_rounds=experiment.n_rounds,
+                )
                 await _run_federated_training(ctx, experiment)
             else:
                 logger.error(f"Unknown experiment type: {type(experiment)}")
@@ -91,6 +106,7 @@ async def run_experiment_training(
 
         except Exception as e:
             logger.error(f"Background training failed for {experiment_id}: {e}")
+            training_status.fail_training(str(e))
             await session.rollback()
 
             # Try to mark experiment as failed in a new session
@@ -110,6 +126,7 @@ async def _run_centralized_training(
     logger.info(f"Running centralized training for {experiment.experiment_id}")
 
     # Load data
+    training_status.update_step("loading_data")
     data_loader = DatasetLoader(ctx.data_dir)
     data_loader.load()
 
@@ -118,6 +135,7 @@ async def _run_centralized_training(
     val_loader = data_loader.get_val_loader(batch_size=batch_size)
 
     # Create and run trainer
+    training_status.update_step("initializing")
     trainer = CentralizedTrainer(
         config=experiment.config,
         n_users=data_loader.n_users,
@@ -126,7 +144,11 @@ async def _run_centralized_training(
         checkpoint_dir=ctx.checkpoint_dir,
     )
 
+    # Training with epoch progress callback
+    training_status.update_step("training", current_epoch=1)
     result = trainer.train(train_loader, val_loader, accelerator="auto")
+    
+    training_status.update_step("validating")
 
     # Persist per-epoch metrics
     metrics_to_persist: list[PerformanceMetric] = []
@@ -168,6 +190,7 @@ async def _run_centralized_training(
                 )
             )
 
+    training_status.update_step("saving")
     if metrics_to_persist:
         await ctx.metrics_service.add_metrics_batch(
             experiment_id=experiment.experiment_id,
@@ -181,6 +204,8 @@ async def _run_centralized_training(
         final_mae=result.final_mae,
         training_time_seconds=result.training_time_seconds,
     )
+    
+    training_status.complete_training()
 
 
 async def _run_federated_training(
@@ -195,9 +220,11 @@ async def _run_federated_training(
 
     logger.info(f"Running federated training for {experiment.experiment_id}")
 
+    training_status.update_step("loading_data")
     storage_dir = ctx.storage_dir / experiment.experiment_id
 
     # Create simulation manager
+    training_status.update_step("initializing")
     sim_manager = FederatedSimulationManager(
         data_dir=ctx.data_dir,
         storage_dir=storage_dir,
@@ -208,19 +235,28 @@ async def _run_federated_training(
     batch_size = experiment.config.batch_size or 1024
     local_epochs = experiment.config.n_epochs or 5
 
-    # Run simulation
-    result = sim_manager.run_simulation(
-        num_rounds=experiment.n_rounds,
-        n_factors=experiment.config.n_factors,
-        learning_rate=experiment.config.learning_rate,
-        regularization=experiment.config.regularization,
-        local_epochs=local_epochs,
-        batch_size=batch_size,
-        fraction_train=1.0,
-        fraction_evaluate=1.0,
-        enable_centralized_eval=True,
-        force_repartition=False,
-    )
+    # Build partial function for simulation
+    def run_sync():
+        return sim_manager.run_simulation(
+            num_rounds=experiment.n_rounds,
+            n_factors=experiment.config.n_factors,
+            learning_rate=experiment.config.learning_rate,
+            regularization=experiment.config.regularization,
+            local_epochs=local_epochs,
+            batch_size=batch_size,
+            fraction_train=1.0,
+            fraction_evaluate=1.0,
+            enable_centralized_eval=True,
+            force_repartition=False,
+        )
+
+    # Run simulation in executor thread to avoid blocking the event loop
+    # This allows the API to respond to status polling requests
+    training_status.update_step("training", current_round=1)
+    loop = asyncio.get_event_loop()
+    result = await loop.run_in_executor(None, run_sync)
+    
+    training_status.update_step("aggregating")
 
     # Persist per-round metrics
     metrics_to_persist: list[PerformanceMetric] = []
@@ -272,6 +308,7 @@ async def _run_federated_training(
                 )
             )
 
+    training_status.update_step("saving")
     if metrics_to_persist:
         await ctx.metrics_service.add_metrics_batch(
             experiment_id=experiment.experiment_id,
@@ -285,6 +322,8 @@ async def _run_federated_training(
         final_mae=result.final_mae,
         training_time_seconds=result.training_time_seconds,
     )
+    
+    training_status.complete_training()
 
 
 async def _mark_experiment_failed(experiment_id: str) -> None:
