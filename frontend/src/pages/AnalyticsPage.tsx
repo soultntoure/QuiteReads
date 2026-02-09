@@ -45,7 +45,7 @@ export default function AnalyticsPage() {
         setShowInfographic(true);
 
         // Wait for the infographic to render
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        await new Promise((resolve) => setTimeout(resolve, 1000));
 
         try {
             await generatePdfReport(["analytics-infographic"], "analytics-report");
@@ -99,15 +99,18 @@ export default function AnalyticsPage() {
             {showInfographic &&
                 createPortal(
                     <div
-                        id="analytics-infographic"
                         style={{
                             position: "fixed",
-                            top: "-9999px",
-                            left: "-9999px",
+                            left: "-5000px",
+                            top: 0,
                             width: "1200px",
+                            zIndex: -1000,
+                            pointerEvents: "none",
                         }}
                     >
-                        <AnalyticsInfographic experiments={experiments} />
+                        <div id="analytics-infographic">
+                            <AnalyticsInfographic experiments={experiments} />
+                        </div>
                     </div>,
                     document.body
                 )}
