@@ -15,32 +15,41 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ArrowLeft, Network } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Link } from "react-router-dom";
 
+// Helper function to check if a number is a power of 2
+const isPowerOfTwo = (n: number): boolean => {
+  return n > 0 && (n & (n - 1)) === 0;
+};
+
 const formSchema = z.object({
   name: z.string().min(1, "Name is required").max(255, "Name must be less than 255 characters"),
+  n_factors: z.coerce
+    .number()
+    .int("Latent factors must be an integer")
+    .min(1, "Latent factors must be at least 1")
+    .max(200, "Latent factors must be at most 200"),
   learning_rate: z.coerce
     .number()
     .min(0.001, "Learning rate must be at least 0.001")
     .max(1, "Learning rate must be at most 1"),
+  regularization: z.coerce
+    .number()
+    .min(0, "Regularization must be non-negative")
+    .max(1, "Regularization must be at most 1"),
   batch_size: z.coerce
     .number()
     .int("Batch size must be an integer")
-    .min(1, "Batch size must be at least 1"),
-  epochs: z.coerce
+    .min(1, "Batch size must be at least 1")
+    .refine((val) => isPowerOfTwo(val), {
+      message: "Batch size must be a power of 2 (e.g., 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024)",
+    }),
+  local_epochs: z.coerce
     .number()
-    .int("Epochs must be an integer")
-    .min(1, "Epochs must be at least 1"),
-  model_type: z.string().min(1, "Model type is required"),
+    .int("Local epochs must be an integer")
+    .min(1, "Local epochs must be at least 1"),
   n_clients: z.coerce
     .number()
     .int("Number of clients must be an integer")
@@ -49,7 +58,6 @@ const formSchema = z.object({
     .number()
     .int("Number of rounds must be an integer")
     .min(1, "At least 1 round is required"),
-  aggregation_strategy: z.enum(["fedavg"]),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -57,34 +65,34 @@ type FormValues = z.infer<typeof formSchema>;
 export default function CreateFederatedExperiment() {
   const navigate = useNavigate();
   const createExperiment = useCreateFederatedExperiment();
-  
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      learning_rate: 0.01,
-      batch_size: 32,
-      epochs: 5,
-      model_type: "biased_svd",
-      n_clients: 5,
-      n_rounds: 10,
-      aggregation_strategy: "fedavg",
+      n_factors: 20,
+      learning_rate: 0.02,
+      regularization: 0.003,
+      batch_size: 64,
+      local_epochs: 4,
+      n_clients: 10,
+      n_rounds: 2,
     },
   });
-  
+
   const onSubmit = (values: FormValues) => {
     createExperiment.mutate(
       {
         name: values.name,
         config: {
+          n_factors: values.n_factors,
           learning_rate: values.learning_rate,
+          regularization: values.regularization,
           batch_size: values.batch_size,
-          epochs: values.epochs,
-          model_type: values.model_type,
+          epochs: values.local_epochs,
         },
         n_clients: values.n_clients,
         n_rounds: values.n_rounds,
-        aggregation_strategy: values.aggregation_strategy,
       },
       {
         onSuccess: (data) => {
@@ -93,7 +101,7 @@ export default function CreateFederatedExperiment() {
       }
     );
   };
-  
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       {/* Back Button */}
@@ -103,7 +111,7 @@ export default function CreateFederatedExperiment() {
           Back to Experiments
         </Link>
       </Button>
-      
+
       {/* Form Card */}
       <Card>
         <CardHeader>
@@ -138,11 +146,33 @@ export default function CreateFederatedExperiment() {
                   </FormItem>
                 )}
               />
-              
+
               {/* Training Parameters */}
               <div className="space-y-4">
                 <h3 className="text-sm font-medium text-muted-foreground">Training Parameters</h3>
                 <div className="grid gap-6 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="n_factors"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Latent Factors</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="1"
+                            max="200"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          Number of latent dimensions (1-200)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <FormField
                     control={form.control}
                     name="learning_rate"
@@ -158,11 +188,39 @@ export default function CreateFederatedExperiment() {
                             {...field}
                           />
                         </FormControl>
+                        <FormDescription>
+                          Step size for gradient descent (0.001-1.0)
+                        </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+                </div>
+
+                <div className="grid gap-6 sm:grid-cols-2">
+                  <FormField
+                    control={form.control}
+                    name="regularization"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Regularization</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            step="0.001"
+                            min="0"
+                            max="1"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          L2 penalty weight (0-1.0)
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
                   <FormField
                     control={form.control}
                     name="batch_size"
@@ -170,59 +228,39 @@ export default function CreateFederatedExperiment() {
                       <FormItem>
                         <FormLabel>Batch Size</FormLabel>
                         <FormControl>
-                          <Input type="number" min="1" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-                
-                <div className="grid gap-6 sm:grid-cols-2">
-                  <FormField
-                    control={form.control}
-                    name="epochs"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Local Epochs</FormLabel>
-                        <FormControl>
-                          <Input type="number" min="1" {...field} />
+                          <Input type="number" {...field} />
                         </FormControl>
                         <FormDescription>
-                          Epochs per client per round
+                          Samples per batch (must be power of 2)
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
-                  <FormField
-                    control={form.control}
-                    name="model_type"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Model Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select model type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="biased_svd">Biased SVD</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
                 </div>
+
+                <FormField
+                  control={form.control}
+                  name="local_epochs"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Local Epochs</FormLabel>
+                      <FormControl>
+                        <Input type="number" min="1" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        Training epochs per client per round
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               </div>
-              
-              {/* Federated Parameters */}
+
+              {/* Federated Settings */}
               <div className="space-y-4">
                 <h3 className="text-sm font-medium text-muted-foreground">Federated Settings</h3>
-                <div className="grid gap-6 sm:grid-cols-3">
+                <div className="grid gap-6 sm:grid-cols-2">
                   <FormField
                     control={form.control}
                     name="n_clients"
@@ -233,13 +271,13 @@ export default function CreateFederatedExperiment() {
                           <Input type="number" min="2" {...field} />
                         </FormControl>
                         <FormDescription>
-                          Min. 2 clients
+                          Number of distributed clients (min. 2)
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="n_rounds"
@@ -250,31 +288,7 @@ export default function CreateFederatedExperiment() {
                           <Input type="number" min="1" {...field} />
                         </FormControl>
                         <FormDescription>
-                          Aggregation rounds
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  
-                  <FormField
-                    control={form.control}
-                    name="aggregation_strategy"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Aggregation</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="fedavg">FedAvg</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormDescription>
-                          Strategy
+                          Number of federated aggregation rounds
                         </FormDescription>
                         <FormMessage />
                       </FormItem>
@@ -282,7 +296,7 @@ export default function CreateFederatedExperiment() {
                   />
                 </div>
               </div>
-              
+
               <div className="flex justify-end gap-3 pt-4">
                 <Button type="button" variant="outline" onClick={() => navigate(-1)}>
                   Cancel

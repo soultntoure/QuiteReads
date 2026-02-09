@@ -118,38 +118,21 @@ class ConfigurationSchema(BaseModel):
         json_schema_extra={
             "examples": [
                 {
-                    "learning_rate": 0.01,
-                    "batch_size": 32,
-                    "epochs": 10,
-                    "model_type": "biased_svd"
+                    "n_factors": 20,
+                    "learning_rate": 0.02,
+                    "regularization": 0.003,
+                    "batch_size": 64,
+                    "epochs": 8
                 }
             ]
         }
     )
 
+    n_factors: int = Field(..., gt=0, le=200, description="Number of latent factors (1-200)")
     learning_rate: float = Field(..., gt=0, le=1, description="Learning rate must be between 0 and 1")
+    regularization: float = Field(..., ge=0, le=1, description="L2 regularization weight (0-1)")
     batch_size: int = Field(..., gt=0, description="Batch size must be positive")
     epochs: int = Field(..., gt=0, description="Number of epochs must be positive")
-    model_type: str = Field(..., min_length=1, description="Type of model to train")
-
-    def to_domain_model_type(self) -> "ModelType":
-        """Convert model_type string to domain ModelType enum.
-
-        Returns:
-            Domain ModelType enum value.
-
-        Raises:
-            ValueError: If model_type is not a valid ModelType.
-        """
-        from app.utils.types import ModelType
-        try:
-            return ModelType(self.model_type)
-        except ValueError:
-            valid_types = [mt.value for mt in ModelType]
-            raise ValueError(
-                f"Invalid model_type '{self.model_type}'. "
-                f"Supported types: {valid_types}"
-            )
 
     @classmethod
     def from_domain(cls, config: "DomainConfiguration") -> "ConfigurationSchema":
@@ -162,10 +145,11 @@ class ConfigurationSchema(BaseModel):
             ConfigurationSchema instance
         """
         return cls(
+            n_factors=config.n_factors,
             learning_rate=config.learning_rate,
-            batch_size=config.batch_size if config.batch_size else 32,
+            regularization=config.regularization,
+            batch_size=config.batch_size if config.batch_size else 64,
             epochs=config.n_epochs,
-            model_type=config.model_type.value,
         )
 
 # Request schemas
@@ -178,10 +162,11 @@ class CreateCentralizedExperimentRequest(BaseModel):
                 {
                     "name": "Centralized Matrix Factorization Exp 1",
                     "config": {
-                        "learning_rate": 0.01,
-                        "batch_size": 32,
-                        "epochs": 10,
-                        "model_type": "biased_svd"
+                        "n_factors": 20,
+                        "learning_rate": 0.02,
+                        "regularization": 0.003,
+                        "batch_size": 64,
+                        "epochs": 8
                     }
                 }
             ]
@@ -199,12 +184,11 @@ class CreateCentralizedExperimentRequest(BaseModel):
         """
         from app.core.configuration import Configuration
         return Configuration(
+            n_factors=self.config.n_factors,
             learning_rate=self.config.learning_rate,
-            n_factors=20,
-            regularization=0.03,
+            regularization=self.config.regularization,
             n_epochs=self.config.epochs,
             batch_size=self.config.batch_size,
-            model_type=self.config.to_domain_model_type(),
         )
 
 
@@ -216,14 +200,14 @@ class CreateFederatedExperimentRequest(BaseModel):
                 {
                     "name": "Federated Matrix Factorization Exp 1",
                     "config": {
-                        "learning_rate": 0.01,
-                        "batch_size": 32,
-                        "epochs": 5,
-                        "model_type": "biased_svd"
+                        "n_factors": 20,
+                        "learning_rate": 0.02,
+                        "regularization": 0.003,
+                        "batch_size": 64,
+                        "epochs": 4
                     },
-                    "n_clients": 5,
-                    "n_rounds": 20,
-                    "aggregation_strategy": "FedAvg"
+                    "n_clients": 10,
+                    "n_rounds": 2
                 }
             ]
         }
@@ -233,7 +217,6 @@ class CreateFederatedExperimentRequest(BaseModel):
     config: ConfigurationSchema = Field(..., description="Training configuration")
     n_clients: int = Field(..., gt=0, description="Number of clients must be positive")
     n_rounds: int = Field(..., gt=0, description="Number of rounds must be positive")
-    aggregation_strategy: AggregationStrategy = Field(..., description="Federated aggregation strategy")
 
     def to_domain_config(self) -> "DomainConfiguration":
         """Convert request DTO to domain Configuration.
@@ -243,15 +226,13 @@ class CreateFederatedExperimentRequest(BaseModel):
         """
         from app.core.configuration import Configuration
         return Configuration(
+            n_factors=self.config.n_factors,
             learning_rate=self.config.learning_rate,
-            n_factors=20,
-            regularization=0.03,
+            regularization=self.config.regularization,
             n_epochs=self.config.epochs,
             n_clients=self.n_clients,
             n_rounds=self.n_rounds,
             batch_size=self.config.batch_size,
-            model_type=self.config.to_domain_model_type(),
-            aggregation_strategy=self.aggregation_strategy.to_domain(),
         )
 
 
@@ -323,10 +304,11 @@ class ExperimentResponse(BaseModel):
                     "type": "centralized",
                     "status": "completed",
                     "config": {
-                        "learning_rate": 0.01,
-                        "batch_size": 32,
-                        "epochs": 10,
-                        "model_type": "biased_svd"
+                        "n_factors": 20,
+                        "learning_rate": 0.02,
+                        "regularization": 0.003,
+                        "batch_size": 64,
+                        "epochs": 8
                     },
                     "metrics": {
                         "final_rmse": 0.45,
@@ -406,10 +388,11 @@ class ExperimentListResponse(BaseModel):
                             "type": "centralized",
                             "status": "completed",
                             "config": {
-                                "learning_rate": 0.01,
-                                "batch_size": 32,
-                                "epochs": 10,
-                                "model_type": "biased_svd"
+                                "n_factors": 20,
+                                "learning_rate": 0.02,
+                                "regularization": 0.003,
+                                "batch_size": 64,
+                                "epochs": 8
                             },
                             "metrics": {
                                 "final_rmse": 0.45,
@@ -428,10 +411,11 @@ class ExperimentListResponse(BaseModel):
                             "type": "federated",
                             "status": "completed",
                             "config": {
-                                "learning_rate": 0.01,
-                                "batch_size": 32,
-                                "epochs": 10,
-                                "model_type": "biased_svd"
+                                "n_factors": 20,
+                                "learning_rate": 0.02,
+                                "regularization": 0.003,
+                                "batch_size": 64,
+                                "epochs": 4
                             },
                             "metrics": {
                                 "final_rmse": 0.45,
@@ -439,7 +423,7 @@ class ExperimentListResponse(BaseModel):
                                 "training_time_seconds": 3600.5
                             },
                             "n_clients": 10,
-                            "n_rounds": 10,
+                            "n_rounds": 2,
                             "aggregation_strategy": "fedavg",
                             "created_at": "2025-12-19T10:30:00",
                             "completed_at": "2025-12-19T14:30:00"

@@ -42,6 +42,8 @@ async def create_centralized_experiment(request: CreateCentralizedExperimentRequ
 @router.post("/federated", response_model=ExperimentResponse, status_code=status.HTTP_201_CREATED)
 async def create_federated_experiment(request: CreateFederatedExperimentRequest, service: ExperimentServiceDep):
     """Create a new federated experiment"""
+    from app.utils.types import AggregationStrategy
+
     config = request.to_domain_config()
 
     experiment = await service.create_federated_experiment(
@@ -49,7 +51,7 @@ async def create_federated_experiment(request: CreateFederatedExperimentRequest,
         config=config,
         n_clients=request.n_clients,
         n_rounds=request.n_rounds,
-        aggregation_strategy=request.aggregation_strategy.to_domain(),
+        aggregation_strategy=AggregationStrategy.FEDAVG,
     )
     return ExperimentResponse.from_domain(experiment)
 

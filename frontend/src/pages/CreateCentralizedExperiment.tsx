@@ -15,32 +15,41 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { ArrowLeft, Server } from "lucide-react";
 import { LoadingSpinner } from "@/components/LoadingSpinner";
 import { Link } from "react-router-dom";
 
+// Helper function to check if a number is a power of 2
+const isPowerOfTwo = (n: number): boolean => {
+  return n > 0 && (n & (n - 1)) === 0;
+};
+
 const formSchema = z.object({
   name: z.string().min(1, "Name is required").max(255, "Name must be less than 255 characters"),
+  n_factors: z.coerce
+    .number()
+    .int("Latent factors must be an integer")
+    .min(1, "Latent factors must be at least 1")
+    .max(200, "Latent factors must be at most 200"),
   learning_rate: z.coerce
     .number()
     .min(0.001, "Learning rate must be at least 0.001")
     .max(1, "Learning rate must be at most 1"),
+  regularization: z.coerce
+    .number()
+    .min(0, "Regularization must be non-negative")
+    .max(1, "Regularization must be at most 1"),
   batch_size: z.coerce
     .number()
     .int("Batch size must be an integer")
-    .min(1, "Batch size must be at least 1"),
+    .min(1, "Batch size must be at least 1")
+    .refine((val) => isPowerOfTwo(val), {
+      message: "Batch size must be a power of 2 (e.g., 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024)",
+    }),
   epochs: z.coerce
     .number()
     .int("Epochs must be an integer")
     .min(1, "Epochs must be at least 1"),
-  model_type: z.string().min(1, "Model type is required"),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -48,27 +57,29 @@ type FormValues = z.infer<typeof formSchema>;
 export default function CreateCentralizedExperiment() {
   const navigate = useNavigate();
   const createExperiment = useCreateCentralizedExperiment();
-  
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
-      learning_rate: 0.01,
-      batch_size: 32,
-      epochs: 10,
-      model_type: "biased_svd",
+      n_factors: 20,
+      learning_rate: 0.02,
+      regularization: 0.003,
+      batch_size: 64,
+      epochs: 8,
     },
   });
-  
+
   const onSubmit = (values: FormValues) => {
     createExperiment.mutate(
       {
         name: values.name,
         config: {
+          n_factors: values.n_factors,
           learning_rate: values.learning_rate,
+          regularization: values.regularization,
           batch_size: values.batch_size,
           epochs: values.epochs,
-          model_type: values.model_type,
         },
       },
       {
@@ -78,7 +89,7 @@ export default function CreateCentralizedExperiment() {
       }
     );
   };
-  
+
   return (
     <div className="mx-auto max-w-2xl space-y-6">
       {/* Back Button */}
@@ -88,7 +99,7 @@ export default function CreateCentralizedExperiment() {
           Back to Experiments
         </Link>
       </Button>
-      
+
       {/* Form Card */}
       <Card>
         <CardHeader>
@@ -123,8 +134,30 @@ export default function CreateCentralizedExperiment() {
                   </FormItem>
                 )}
               />
-              
+
               <div className="grid gap-6 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="n_factors"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Latent Factors</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          min="1"
+                          max="200"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        Number of latent dimensions (1-200)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="learning_rate"
@@ -141,13 +174,38 @@ export default function CreateCentralizedExperiment() {
                         />
                       </FormControl>
                       <FormDescription>
-                        Between 0.001 and 1.0
+                        Step size for gradient descent (0.001-1.0)
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                
+              </div>
+
+              <div className="grid gap-6 sm:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="regularization"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Regularization</FormLabel>
+                      <FormControl>
+                        <Input
+                          type="number"
+                          step="0.001"
+                          min="0"
+                          max="1"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        L2 penalty weight (0-1.0)
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="batch_size"
@@ -155,60 +213,34 @@ export default function CreateCentralizedExperiment() {
                     <FormItem>
                       <FormLabel>Batch Size</FormLabel>
                       <FormControl>
-                        <Input type="number" min="1" {...field} />
+                        <Input type="number" {...field} />
                       </FormControl>
                       <FormDescription>
-                        Number of samples per batch
+                        Samples per batch (must be power of 2)
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
               </div>
-              
-              <div className="grid gap-6 sm:grid-cols-2">
-                <FormField
-                  control={form.control}
-                  name="epochs"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Epochs</FormLabel>
-                      <FormControl>
-                        <Input type="number" min="1" {...field} />
-                      </FormControl>
-                      <FormDescription>
-                        Number of training epochs
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="model_type"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Model Type</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select model type" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="biased_svd">Biased SVD</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormDescription>
-                        Matrix factorization algorithm
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              
+
+              <FormField
+                control={form.control}
+                name="epochs"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Epochs</FormLabel>
+                    <FormControl>
+                      <Input type="number" min="1" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Number of training epochs
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <div className="flex justify-end gap-3 pt-4">
                 <Button type="button" variant="outline" onClick={() => navigate(-1)}>
                   Cancel

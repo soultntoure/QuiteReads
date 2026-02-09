@@ -5,10 +5,11 @@ export type AggregationStrategy = "fedavg";
 
 // Configuration for training
 export interface ConfigurationSchema {
+  n_factors: number;
   learning_rate: number;
+  regularization: number;
   batch_size: number;
   epochs: number;
-  model_type: string;
 }
 
 // Final metrics after training completes
@@ -51,7 +52,6 @@ export interface CreateFederatedExperimentRequest {
   config: ConfigurationSchema;
   n_clients: number;
   n_rounds: number;
-  aggregation_strategy: AggregationStrategy;
 }
 
 // Request to complete experiment
