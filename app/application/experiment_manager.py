@@ -54,7 +54,7 @@ class ExperimentManager:
         data_dir: Path,
         checkpoint_dir: Optional[Path] = None,
         storage_dir: Optional[Path] = None,
-        batch_size: int = 1024,
+        batch_size: int = 64,
     ):
         """Initialize the experiment manager.
 
@@ -171,9 +171,9 @@ class ExperimentManager:
         name: str,
         config: Configuration,
         n_clients: int = 10,
-        n_rounds: int = 10,
+        n_rounds: int = 2,
         aggregation_strategy: AggregationStrategy = AggregationStrategy.FEDAVG,
-        local_epochs: int = 5,
+        local_epochs: int = 4,
         fraction_train: float = 1.0,
         fraction_evaluate: float = 1.0,
         force_repartition: bool = False,

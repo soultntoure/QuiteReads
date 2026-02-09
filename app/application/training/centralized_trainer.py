@@ -53,7 +53,7 @@ class LitBiasedMatrixFactorization(pl.LightningModule):
         n_factors: int = 20,
         global_mean: float = 0.0,
         learning_rate: float = 0.02,
-        regularization: float = 0.03,
+        regularization: float = 0.003,
     ):
         """Initialize the Lightning module.
 

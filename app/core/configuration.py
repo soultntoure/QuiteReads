@@ -16,8 +16,8 @@ class Configuration:
     model_type: ModelType = ModelType.BIASED_SVD
     n_factors: int = 20
     learning_rate: float = 0.02
-    regularization: float = 0.03
-    n_epochs: int = 20
+    regularization: float = 0.003
+    n_epochs: int = 8
     random_seed: int = 42
 
     # Federated-specific (optional)
@@ -35,11 +35,11 @@ class Configuration:
 
 
 # Predefined configurations for testing
-CENTRALIZED_DEFAULT = Configuration(n_factors=20, n_epochs=20)
+CENTRALIZED_DEFAULT = Configuration(n_factors=20, n_epochs=8)
 FEDERATED_DEFAULT = Configuration(
     n_factors=20,
     n_epochs=8,
-    n_clients=5,
+    n_clients=10,
     n_rounds=2,
     aggregation_strategy=AggregationStrategy.FEDAVG,
 )
