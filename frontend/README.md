@@ -1,4 +1,4 @@
-# HFedRec Dashboard
+# QuiteReads Dashboard
 
 A professional research dashboard for monitoring and managing federated learning experiments in recommendation systems.
 

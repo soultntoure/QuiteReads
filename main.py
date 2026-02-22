@@ -1,5 +1,5 @@
 def main():
-    print("Hello from fedrec-dashboard!")
+    print("Hello from QuiteReads!")
 
 
 if __name__ == "__main__":

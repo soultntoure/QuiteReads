@@ -88,7 +88,7 @@ function SidebarContent({
             <FlaskConical className="h-5 w-5 text-primary-foreground" />
           </div>
           {!collapsed && (
-            <span className="text-lg font-bold">FedRec</span>
+            <span className="text-lg font-bold">QuiteReads</span>
           )}
         </Link>
       </div>

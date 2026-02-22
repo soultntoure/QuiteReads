@@ -1,10 +1,10 @@
-# FedRec Dashboard - Architecture Canvas
+# QuiteReads Dashboard - Architecture Canvas
 
 > **A visual mental model connecting all architectural components**
 
 ## 🎯 System Overview
 
-FedRec Dashboard implements a federated learning book recommender system comparing centralized vs federated matrix factorization approaches.
+QuiteReads Dashboard implements a federated learning book recommender system comparing centralized vs federated matrix factorization approaches.
 
 **Tech Stack**: Python 3.12 | FastAPI | SQLAlchemy (async) | PostgreSQL | PyTorch Lightning | Flower Framework
 
@@ -140,7 +140,7 @@ sequenceDiagram
 ## 📦 Directory Structure & Responsibilities
 
 ```
-fedrec-dashboard/
+quitereads-dashboard/
 │
 ├── app/
 │   ├── core/                          # 🔴 DOMAIN LAYER (Business Rules)
@@ -778,4 +778,4 @@ graph LR
 ---
 
 *Last Updated: 2026-01-22*
-*Generated for: FedRec Dashboard FYP Project*
+*Generated for: QuiteReads Dashboard FYP Project*

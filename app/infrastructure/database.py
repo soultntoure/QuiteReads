@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import (
 from sqlalchemy.orm import DeclarativeBase
 
 # Default connection string (override via environment)
-DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/fedrec"
+DATABASE_URL = "postgresql+asyncpg://postgres:postgres@localhost:5432/quitereads"
 
 
 class Base(DeclarativeBase):
