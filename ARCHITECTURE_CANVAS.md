@@ -22,7 +22,7 @@ graph TB
 
     subgraph "Application Layer (Use Cases)"
         B1[Experiment Manager]
-        B2[Centralized Trainer]
+        B2[Centralized Trainer]1
         B3[Federated Simulation Manager]
         B4[Data Handler]
         B5[Metrics Calculator]
