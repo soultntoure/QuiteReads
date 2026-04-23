@@ -2,7 +2,7 @@
 
 # 📚 QuiteReads
 
-**A federated learning research dashboard for book recommendations**
+**A federated learning dashboard for book recommendations**
 
 *Comparing privacy-preserving federated training against centralized approaches — Final Year Project, Multimedia University (MMU)*
 
