@@ -104,7 +104,7 @@ QuiteReads/
 └── project-notes/              # Research notes, architecture decisions, retrospectives
 ```
 
-> Each subdirectory has its own `README.md` with deeper technical details.
+> Each subdirectory has its own `README.md` file with deeper technical details.
 
 ---
 
