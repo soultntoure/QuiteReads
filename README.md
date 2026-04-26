@@ -45,7 +45,6 @@ Using the **Goodreads dataset** and a **Matrix Factorization** model, the dashbo
 | 📊 | **Dataset Explorer** | Browse Goodreads dataset statistics and distribution |
 | 🤖 | **AI Assistant** | Ask questions about your experiment results using Gemini-powered chat |
 | 🩺 | **Health Monitoring** | Real-time backend and database status indicators |
-| 🌙 | **Dark / Light Mode** | Full theme support across the dashboard |
 
 ---
 
