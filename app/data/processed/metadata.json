@@ -1,11 +1,11 @@
 {
-  "preprocessing_date": "2026-02-10T00:48:35.206024",
+  "preprocessing_date": "2026-04-25T15:35:02.995951",
   "config": {
     "min_user_ratings": 20,
     "min_item_ratings": 20,
     "val_ratio": 0.1,
-    "test_ratio": 0.15,
-    "random_seed": 42
+    "test_ratio": 0.2,
+    "random_seed": 44
   },
   "filter_iterations": 7,
   "statistics": {
@@ -24,9 +24,9 @@
     "rating_max": 5,
     "retention_rate": "8.37%"
   },
-  "train_size": 171596,
+  "train_size": 160156,
   "val_size": 22879,
-  "test_size": 34318,
+  "test_size": 45758,
   "files": {
     "interactions_filtered": "processed/interactions_filtered.parquet",
     "interactions_indexed": "processed/interactions_indexed.parquet",
