@@ -110,7 +110,6 @@ app/
 Orchestrates domain objects and implements use cases:
 
 - **experiment_manager.py**: Main orchestrator for running centralized/federated experiments
-- **training/centralized_trainer.py**: Centralized training using scikit-surprise
 - **training/federated_simulation_manager.py**: Federated training using Flower simulation
 - **data/data_handler.py**: Dataset loading and preprocessing
 - **reporting/metrics_calculator.py**: RMSE/MAE computation

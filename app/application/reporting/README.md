@@ -73,7 +73,7 @@ except ValueError as e:
 ```
 
 ### Significance
-This module follows the **Single Responsibility Principle** by providing focused metric computation separate from logging or persistence. The flexible input types (tensors or sequences) make it reusable across different training frameworks (PyTorch Lightning, raw PyTorch, scikit-surprise). Input validation ensures robustness and clear error messages. The `compute_metrics()` function demonstrates **DRY** by computing both metrics in a single tensor pass, improving efficiency for large datasets.
+This module follows the **Single Responsibility Principle** by providing focused metric computation separate from logging or persistence. The flexible input types (tensors or sequences) make it reusable across different training frameworks (PyTorch Lightning, raw PyTorch). Input validation ensures robustness and clear error messages. The `compute_metrics()` function demonstrates **DRY** by computing both metrics in a single tensor pass, improving efficiency for large datasets.
 
 ---
 

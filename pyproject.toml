@@ -30,7 +30,6 @@ dev-dependencies = [
   "numpy",
   "torch",
   "lightning==2.6.1",
-  "scikit-surprise",
   "flwr[simulation]",
   "pytest",
   "pytest-asyncio",
