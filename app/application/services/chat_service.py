@@ -68,10 +68,11 @@ class ChatService:
             raise ValueError("GEMINI_API_KEY environment variable is not set")
         
         self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash-lite",
             google_api_key=api_key,
             temperature=0.7,
             streaming=True,
+            max_retries=1,
         )
         
         self.prompt = ChatPromptTemplate.from_messages([

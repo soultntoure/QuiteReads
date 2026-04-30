@@ -56,7 +56,11 @@ async def chat(request: ChatRequest):
             # Signal end of stream
             yield "data: [DONE]\n\n"
         except Exception as e:
-            yield f"data: Error: {str(e)}\n\n"
+            if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                yield "data: Sorry, the AI service is temporarily rate-limited. Please wait a moment and try again.\n\n"
+            else:
+                yield f"data: Sorry, an error occurred. Please try again.\n\n"
+            yield "data: [DONE]\n\n"
     
     return StreamingResponse(
         generate(),
