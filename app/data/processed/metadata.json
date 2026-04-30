@@ -1,11 +1,11 @@
 {
-  "preprocessing_date": "2026-04-25T15:35:02.995951",
+  "preprocessing_date": "2026-04-30T13:37:06.202391",
   "config": {
     "min_user_ratings": 20,
     "min_item_ratings": 20,
     "val_ratio": 0.1,
     "test_ratio": 0.2,
-    "random_seed": 44
+    "random_seed": 42
   },
   "filter_iterations": 7,
   "statistics": {

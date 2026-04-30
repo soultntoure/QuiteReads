@@ -33,7 +33,8 @@
       "Skill(module-readme-standard:*)",
       "Bash(uv add:*)",
       "WebFetch(domain:flower.ai)",
-      "Bash(pandoc:*)"
+      "Bash(pandoc:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
